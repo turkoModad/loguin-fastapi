@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>lista de usuarios registrados</title>
+</head>
+<body>    
+    <div id="mostrar">
+        <h1>Lista de Usuarios</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>firstname</th>
+                    <th>lastname</th>
+                    <th>country</th>
+                    <th>password</th>
+                    <th>username</th>
+                    <th>rol</th>
+                </tr>
+            </thead>
+
+            <tbody id="personas">
+
+            </tbody>
+        </table>
+    </div>
+    
+    <div id="invalido">
+        <h1>Su usuario o contraseña no son correctos</h1>
+    </div>
+    
+
+    <script>       
+        var accessToken = localStorage.getItem('access_token');
+        var tokenType = localStorage.getItem('token_type');        
+    
+        if (accessToken && tokenType && accessToken.split('.').length === 3) {            
+            fetch('admin', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `${tokenType} ${accessToken}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {                               
+                for (var usuario of data.usuarios) {
+                    var lista = `
+                        <tr>
+                            <td>${usuario.id}</td>
+                            <td>${usuario.firstname}</td>
+                            <td>${usuario.lastname}</td>
+                            <td>${usuario.country}</td>
+                            <td>${usuario.password_user}</td>
+                            <td>${usuario.username}</td>
+                            <td>${usuario.rol}</td>
+                        </tr>
+                    `;
+                    
+                    document.querySelector('#personas').innerHTML += lista;                
+                    document.querySelector('#mostrar').style.display = 'block';
+                    document.querySelector('#invalido').style.display = 'none';
+                }
+            })
+        } else {            
+            document.querySelector('#mostrar').style.display = 'none';            
+            document.querySelector('#personas').style.display = 'none';           
+            document.querySelector('#invalido').style.display = 'block';
+            console.error('Token inválido');            
+            setTimeout(function() {
+                window.location.href = '/';                
+            }, 2000);
+        }        
+    </script>
+    
+        
+   
+</body>
+</html>

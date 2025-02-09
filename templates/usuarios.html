@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Document</title>
+</head>
+<body>
+    <div class="info">        
+        <p>llegue</p>
+    </div>
+
+</body>
+<script>       
+	var accessToken = localStorage.getItem('access_token');
+	var tokenType = localStorage.getItem('token_type');
+	var UserGlobal = localStorage.getItem('username');        
+
+	if (accessToken && tokenType && accessToken.split('.').length === 3) {            
+		fetch('usuarios', {
+			method: 'POST',
+			headers: {
+				'Authorization': `${tokenType} ${accessToken}`,
+				'Content_Type': 'application/json'
+			},
+			body: JSON.stringify({ username: UserGlobal }) 
+			
+		})
+		.then(response => response.json())
+		.then(datos => {                               
+			for (var usuario of datos.usuarios) {
+				var lista = `
+					<tr>
+						<td>${usuario.id}</td>
+						<td>${usuario.firstname}</td>
+						<td>${usuario.lastname}</td>
+						<td>${usuario.country}</td>
+						<td>${usuario.password_user}</td>
+						<td>${usuario.username}</td>
+						<td>${usuario.rol}</td>
+					</tr>
+				`;
+				
+				document.querySelector('#personas').innerHTML += lista;                
+				document.querySelector('#mostrar').style.display = 'block';
+				document.querySelector('#invalido').style.display = 'none';
+			}
+		})
+	} else {            
+		document.querySelector('#mostrar').style.display = 'none';            
+		document.querySelector('#personas').style.display = 'none';           
+		document.querySelector('#invalido').style.display = 'block';
+		console.error('Token inválido');            
+		setTimeout(function() {
+			window.location.href = '/';                
+		}, 2000);
+	}        
+</script>
+</html>
