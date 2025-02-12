@@ -1,59 +1,109 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Document</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuario Logueado</title>
+    <style>
+        .hidden { display: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid black; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
 </head>
 <body>
-    <div class="info">        
-        <p>llegue</p>
+    <div id="mostrar" class="hidden">
+        <h2>Usuario Logueado</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>País</th>
+                    <th>Usuario</th>
+                    <th>Rol</th>
+                </tr>
+            </thead>
+            <tbody id="personas"></tbody>
+        </table>
     </div>
 
-</body>
-<script>       
-	var accessToken = localStorage.getItem('access_token');
-	var tokenType = localStorage.getItem('token_type');
-	var UserGlobal = localStorage.getItem('username');        
+    <div id="invalido" class="hidden">
+        <p>Autenticación inválida. Redirigiendo...</p>
+    </div>
 
-	if (accessToken && tokenType && accessToken.split('.').length === 3) {            
-		fetch('usuarios', {
-			method: 'POST',
-			headers: {
-				'Authorization': `${tokenType} ${accessToken}`,
-				'Content_Type': 'application/json'
-			},
-			body: JSON.stringify({ username: UserGlobal }) 
-			
-		})
-		.then(response => response.json())
-		.then(datos => {                               
-			for (var usuario of datos.usuarios) {
-				var lista = `
-					<tr>
-						<td>${usuario.id}</td>
-						<td>${usuario.firstname}</td>
-						<td>${usuario.lastname}</td>
-						<td>${usuario.country}</td>
-						<td>${usuario.password_user}</td>
-						<td>${usuario.username}</td>
-						<td>${usuario.rol}</td>
-					</tr>
-				`;
-				
-				document.querySelector('#personas').innerHTML += lista;                
-				document.querySelector('#mostrar').style.display = 'block';
-				document.querySelector('#invalido').style.display = 'none';
-			}
-		})
-	} else {            
-		document.querySelector('#mostrar').style.display = 'none';            
-		document.querySelector('#personas').style.display = 'none';           
-		document.querySelector('#invalido').style.display = 'block';
-		console.error('Token inválido');            
-		setTimeout(function() {
-			window.location.href = '/';                
-		}, 2000);
-	}        
-</script>
+    <script>
+        var accessToken = localStorage.getItem('access_token');
+        var tokenType = localStorage.getItem('token_type');
+        var UserGlobal = localStorage.getItem('username');        
+
+        if (accessToken && tokenType && accessToken.split('.').length === 3) {
+            fetch('usuarios', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `${tokenType} ${accessToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username: UserGlobal }) 
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Error en la autenticación");
+                }
+                return response.json();
+            })
+            .then(datos => {  
+                console.log('Usuario recibido:', JSON.stringify(datos, null, 2));
+
+                let usuario = datos.usuario;
+                var tabla = document.querySelector('#personas');
+
+                if (!tabla) {
+                    console.error("No se encontró el elemento #personas en el DOM");
+                    return;
+                }
+
+                tabla.innerHTML = ''; // Limpiamos la tabla antes de agregar datos
+
+                if (!usuario) {
+                    tabla.innerHTML = `<tr><td colspan="6">No hay datos del usuario</td></tr>`;
+                } else {
+                    let fila = `
+                        <tr>
+                            <td>${usuario.id}</td>
+                            <td>${usuario.firstname}</td>
+                            <td>${usuario.lastname}</td>
+                            <td>${usuario.country}</td>
+                            <td>${usuario.username}</td>
+                            <td>${usuario.rol}</td>
+                        </tr>
+                    `;
+                    tabla.innerHTML = fila;
+                }
+
+                document.querySelector('#mostrar').classList.remove('hidden');
+                document.querySelector('#invalido').classList.add('hidden');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.querySelector('#mostrar').classList.add('hidden');
+                document.querySelector('#invalido').classList.remove('hidden');
+
+                setTimeout(function() {
+                    window.location.href = '/'; 
+                }, 2000);
+            });
+
+        } else {
+            document.querySelector('#mostrar').classList.add('hidden');
+            document.querySelector('#invalido').classList.remove('hidden');
+
+            console.error('Token inválido');
+            setTimeout(function() {
+                window.location.href = '/';                
+            }, 2000);
+        }        
+    </script>
+</body>
 </html>
