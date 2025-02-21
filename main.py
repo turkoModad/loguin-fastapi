@@ -81,14 +81,15 @@ async def signup(request: Request):
 
 
 @app.post("/signup", response_class=HTMLResponse)
-async def signup(username: str = Form(...), password_user: str = Form(...), firstname: str = Form(...), lastname: str = Form(...), country: str = Form(...), db: Session = Depends(get_db)):
+async def signup(username: str = Form(...), password_user: str = Form(...), firstname: str = Form(...), lastname: str = Form(...), country: str = Form(...), email: str = Form(...) ,db: Session = Depends(get_db)):
     password_hash = Hash.hash_password(password_user)
     nuevo_usuario = models.User(
         username=username, 
         password_user=password_hash, 
         firstname=firstname, 
         lastname=lastname, 
-        country=country
+        country=country,
+        email = email,
     )
     db.add(nuevo_usuario)
     db.commit()
@@ -105,9 +106,28 @@ async def login(usuario : OAuth2PasswordRequestForm = Depends(), db: Session = D
         autenticacion['rol'] = user.rol
         if not user:
             raise HTTPException(status_code=404, detail="User not found")    
-    return autenticacion   
+    return autenticacion  
+
+
+@app.get("/forgot", response_class=HTMLResponse)
+async def forgot(request: Request):
+    return templates.TemplateResponse("forgot.html", {"request": request})
     
 
+@app.post("/forgot")
+async def forgot(email: str = Form(...), db: Session = Depends(get_db)):
+    try:
+        user = db.query(models.User).filter(models.User.email == email).first()
+
+        if user:
+            return {"email": email, "password": user.password_user} 
+        else:
+            raise HTTPException(status_code=404, detail="username no encontrado")
+    except Exception as e:
+        print(f"Error en forgot(): {e}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+    
 @app.get("/usuarios", response_class=HTMLResponse)
 async def usuarios(request: Request):                     
     return templates.TemplateResponse("usuarios.html", {"request": request})

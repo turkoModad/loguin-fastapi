@@ -1,0 +1,15 @@
+{% extends "components/layout.html" %}
+
+{% block title %}Olvido{% endblock %}
+
+{% block content %}
+    <h2>Bienvenido a la Página de recuperacion de contraseñas</h2>
+    <form action="/forgot" method="POST">
+        <div class="mb-3">
+            <label for="email-olvidado" class="form-label">Introduce tu Email</label>
+			<input name="email" type="email" class="form-control" id="validationDefaultEmail" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Enviar</button>
+    </form>
+    
+{% endblock %}

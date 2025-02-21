@@ -10,4 +10,5 @@ class User(Base):
     lastname = Column(String)
     country = Column(String)
     password_user = Column(String)
+    email = Column(String, unique=True, index=True, nullable=False)
     rol = Column(String, default="user")

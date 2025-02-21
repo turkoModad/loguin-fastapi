@@ -6,6 +6,8 @@ class User(BaseModel):
     lastname: str
     country: str
     password_user: str
+    email: str
+    rol: str
       
 
 class Token(BaseModel):
