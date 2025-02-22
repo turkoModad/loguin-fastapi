@@ -148,7 +148,6 @@ async def admin(request: Request):
 async def admin(db: Session = Depends(get_db)):
     data = db.query(models.User).all()    
     return {"usuarios": data}    
-     
             
 
 if __name__ == "__main__":
