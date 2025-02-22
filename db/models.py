@@ -11,4 +11,6 @@ class User(Base):
     country = Column(String)
     password_user = Column(String)
     email = Column(String, unique=True, index=True, nullable=False)
+    codigo = Column(String, nullable=True)
+    codigo_expiracion = Column(String, nullable=True)
     rol = Column(String, default="user")

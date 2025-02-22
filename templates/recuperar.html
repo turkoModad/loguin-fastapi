@@ -1,0 +1,17 @@
+{% extends "components/layout.html" %}
+
+{% block title %}Olvido{% endblock %}
+
+{% block content %}
+    <h2>Recuperación de contraseña</h2> 
+
+    <form action="/recuperacion" method="POST">
+        <div class="col-md-3 mb-4">
+            <label for="codigo" class="form-label">Código recibido en tu email</label>
+            <input name="codigo" type="text" class="form-control" id="codigo" required 
+                   maxlength="6" pattern="\d{6}" title="El código debe tener 6 dígitos">
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Enviar</button>
+    </form>        
+{% endblock %}

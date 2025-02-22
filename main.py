@@ -17,6 +17,9 @@ from sqlalchemy import inspect
 from fastapi.exceptions import HTTPException
 from schemas import TokenData
 from oauth import get_current_user
+from codigo_recuperacion import generar_codigo, send_recovery_email
+from datetime import datetime, timedelta, timezone
+
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -89,7 +92,7 @@ async def signup(username: str = Form(...), password_user: str = Form(...), firs
         firstname=firstname, 
         lastname=lastname, 
         country=country,
-        email = email,
+        email = email,        
     )
     db.add(nuevo_usuario)
     db.commit()
@@ -115,17 +118,45 @@ async def forgot(request: Request):
     
 
 @app.post("/forgot")
-async def forgot(email: str = Form(...), db: Session = Depends(get_db)):
-    try:
-        user = db.query(models.User).filter(models.User.email == email).first()
+async def forgot(email: str = Form(...), db: Session = Depends(get_db)):    
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if user:
+        codigo = generar_codigo(user)
+        expiracion = datetime.now(timezone.utc) + timedelta(minutes=5)
+        user.codigo = codigo
+        user.codigo_expiracion = expiracion
+        db.commit()
+        db.refresh(user)
+        send_recovery_email(email, codigo)    
+        return RedirectResponse(url="/recuperar", status_code=303) 
+    else:
+        raise HTTPException(status_code=404, detail="Email no registrado")   
 
-        if user:
-            return {"email": email, "password": user.password_user} 
-        else:
-            raise HTTPException(status_code=404, detail="username no encontrado")
-    except Exception as e:
-        print(f"Error en forgot(): {e}")
-        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+@app.get("/recuperar", response_class=HTMLResponse)
+async def recuperar(request: Request):
+    return templates.TemplateResponse("recuperar.html", {"request": request})
+
+
+@app.post("/recuperacion", response_class=HTMLResponse)
+async def recuperacion(codigo: str = Form(...), db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.codigo == codigo).first()
+    if not user:
+        return RedirectResponse(url = "/recuperar", status_code=303)
+    
+    if user.codigo_expiracion is None or user.codigo_expiracion < datetime.now(timezone.utc):
+        return RedirectResponse(url = "/forgot", status_code=303)
+     
+    user.codigo = None
+    user.codigo_expiracion = None
+    db.commit()
+    
+    return RedirectResponse(url="/cambio", status_code=303)
+
+@app.get("/cambio", response_class=HTMLResponse)
+async def cambio(request: Request):
+    return templates.TemplateResponse("cambio.html", {"request": request})
+
 
     
 @app.get("/usuarios", response_class=HTMLResponse)
