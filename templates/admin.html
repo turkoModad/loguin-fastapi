@@ -40,9 +40,10 @@
 
     <script>       
         var accessToken = localStorage.getItem('access_token');
-        var tokenType = localStorage.getItem('token_type');        
+        var tokenType = localStorage.getItem('token_type');
+        var role = localStorage.getItem('rol');        
     
-        if (accessToken && tokenType && accessToken.split('.').length === 3) {            
+        if (accessToken && tokenType && accessToken.split('.').length === 3 && role === 'admin') {            
             fetch('admin', {
                 method: 'POST',
                 headers: {
@@ -78,9 +79,118 @@
                 window.location.href = '/';                
             }, 2000);
         }        
-    </script>
-    
-        
-   
+    </script>   
 </body>
 </html>
+
+
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Administración de usuarios</title>
+    <style>
+        .hidden { display: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid black; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>    
+    <div id="mostrar">
+        <h1>Lista de Usuarios</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>firstname</th>
+                    <th>lastname</th>
+                    <th>country</th>
+                    <th>password</th>
+                    <th>username</th>
+                    <th>rol</th>
+                </tr>
+            </thead>
+            <tbody id="personas">
+            </tbody>
+        </table>
+    </div>
+    
+    <div id="invalido">
+        <h1>Su usuario o contraseña no son correctos</h1>
+    </div>
+    
+    <script>
+        var accessToken = localStorage.getItem('access_token');
+        var tokenType = localStorage.getItem('token_type');
+        
+        // Verificar que se tenga un token con el formato JWT
+        if (accessToken && tokenType && accessToken.split('.').length === 3) {
+            // Decodificar el payload del token
+            try {
+                var payloadBase64 = accessToken.split('.')[1];
+                var payloadDecoded = atob(payloadBase64);
+                var payload = JSON.parse(payloadDecoded);
+                
+                // Validar que el rol del usuario sea 'admin'
+                if (payload.rol !== 'admin') {
+                    document.querySelector('#mostrar').style.display = 'none';
+                    document.querySelector('#invalido').style.display = 'block';
+                    console.error('Acceso denegado: no eres administrador');
+                    setTimeout(function() {
+                        window.location.href = '/';
+                    }, 2000);
+                } else {
+                    // Si el usuario es admin, se realiza la petición al endpoint admin
+                    fetch('admin', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `${tokenType} ${accessToken}`
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        for (var usuario of data.usuarios) {
+                            var lista = `
+                                <tr>
+                                    <td>${usuario.id}</td>
+                                    <td>${usuario.firstname}</td>
+                                    <td>${usuario.lastname}</td>
+                                    <td>${usuario.country}</td>
+                                    <td>${usuario.password_user}</td>
+                                    <td>${usuario.username}</td>
+                                    <td>${usuario.rol}</td>
+                                </tr>
+                            `;
+                            
+                            document.querySelector('#personas').innerHTML += lista;
+                        }
+                        document.querySelector('#mostrar').style.display = 'block';
+                        document.querySelector('#invalido').style.display = 'none';
+                    })
+                    .catch(error => {
+                        console.error('Error al obtener los datos:', error);
+                    });
+                }
+            } catch (error) {
+                console.error('Error al procesar el token:', error);
+                document.querySelector('#mostrar').style.display = 'none';
+                document.querySelector('#invalido').style.display = 'block';
+                setTimeout(function() {
+                    window.location.href = '/';
+                }, 2000);
+            }
+        } else {
+            document.querySelector('#mostrar').style.display = 'none';
+            document.querySelector('#invalido').style.display = 'block';
+            console.error('Token inválido');
+            setTimeout(function() {
+                window.location.href = '/';
+            }, 2000);
+        }
+    </script>   
+</body>
+</html> -->

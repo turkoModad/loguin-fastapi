@@ -1,5 +1,6 @@
 from db.database import Base, engine
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, DateTime
+
 
 
 class User(Base):
@@ -13,4 +14,6 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     codigo = Column(String, nullable=True)
     codigo_expiracion = Column(String, nullable=True)
+    intentos = Column(Integer, default=0)
+    ultimo_intento = Column(DateTime, nullable=True)
     rol = Column(String, default="user")

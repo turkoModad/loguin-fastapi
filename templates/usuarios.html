@@ -36,10 +36,15 @@
     <script>
         var accessToken = localStorage.getItem('access_token');
         var tokenType = localStorage.getItem('token_type');
-        var UserGlobal = localStorage.getItem('username');        
+        var UserGlobal = localStorage.getItem('username'); 
+        var rolGlobal = localStorage.getItem('rol');       
 
         if (accessToken && tokenType && accessToken.split('.').length === 3) {
-            fetch('usuarios', {
+            if (rolGlobal === 'admin') {
+                window.location.href = '/admin';
+            }
+            else {
+                fetch('usuarios', {
                 method: 'POST',
                 headers: {
                     'Authorization': `${tokenType} ${accessToken}`,
@@ -93,8 +98,8 @@
                 setTimeout(function() {
                     window.location.href = '/'; 
                 }, 2000);
-            });
-
+            });                
+            }
         } else {
             document.querySelector('#mostrar').classList.add('hidden');
             document.querySelector('#invalido').classList.remove('hidden');

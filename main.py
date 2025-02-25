@@ -19,6 +19,7 @@ from schemas import TokenData
 from oauth import get_current_user
 from codigo_recuperacion import generar_codigo, send_recovery_email
 from datetime import datetime, timedelta, timezone
+import time
 
 
 
@@ -40,30 +41,43 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 
+from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi import Request, HTTPException, status
+
+from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi import Request, HTTPException, status
+
 class MiMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        if (request.url.path == '/admin' and request.method == 'POST') or (request.url.path == '/usuarios' and request.method == 'POST'):
-            token = request.headers.get('Authorization')
-
+        # Definimos las rutas protegidas y el método (POST)
+        if request.url.path in ["/admin", "/usuarios"] and request.method == "POST":
+            token = request.headers.get("Authorization")
             credentials_exception = HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Could not validate credentials",
-                headers={"WWW-Authenticate": "Bearer"},)
-                                    
-            if token:
-                if token.startswith("Bearer "):
-                    token = token.split(" ")[1]                    
-                else:
-                    raise credentials_exception
-                  
-                if len(token.split(".")) != 3:
-                    raise credentials_exception 
-                                                            
-                if verify_token(token, credentials_exception):                    
-                                        
-                    return await call_next(request)
-        else:            
-            return await call_next(request) # Avanzar
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+            # Si no se envía el token, lanza la excepción
+            if not token:
+                raise credentials_exception
+
+            # Verifica que tenga el prefijo "Bearer "
+            if not token.startswith("Bearer "):
+                raise credentials_exception
+
+            # Extrae el token
+            token = token.split(" ")[1]
+            # Verifica que el token tenga tres partes separadas por puntos (formato JWT)
+            if len(token.split(".")) != 3:
+                raise credentials_exception
+
+            # Si la verificación del token falla, lanza la excepción
+            if not verify_token(token, credentials_exception):
+                raise credentials_exception
+
+        # Si no se cumple la condición (por ejemplo, GET o rutas no protegidas), continúa
+        return await call_next(request)
+    
 
 app.add_middleware(MiMiddleware)
 
@@ -141,22 +155,41 @@ async def recuperar(request: Request):
 @app.post("/recuperacion", response_class=HTMLResponse)
 async def recuperacion(codigo: str = Form(...), db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.codigo == codigo).first()
+
     if not user:
-        return RedirectResponse(url = "/recuperar", status_code=303)
-    
-    if user.codigo_expiracion is None or user.codigo_expiracion < datetime.now(timezone.utc):
-        return RedirectResponse(url = "/forgot", status_code=303)
-     
+        # No existe el usuario; aquí podrías registrar el intento en otro lado si lo deseas
+        return RedirectResponse(url="/recuperar", status_code=303)
+
+    # Si han pasado más de 30 minutos desde el último intento, reiniciamos el contador
+    tiempo_limite = datetime.now(timezone.utc) - timedelta(minutes=30)
+    if user.ultimo_intento and user.ultimo_intento < tiempo_limite:
+        user.intentos = 0
+
+    # Incrementamos el contador de intentos y actualizamos la hora del último intento
+    user.intentos += 1
+    user.ultimo_intento = datetime.now(timezone.utc)
+    db.commit()  # Guardamos el incremento
+
+    # Verificamos si ya se alcanzó el límite de intentos (3 o más)
+    if user.intentos >= 3:
+        return RedirectResponse(url="/bloqueado", status_code=303)
+
+    # Verificamos si el código está expirado
+    if not user.codigo_expiracion or user.codigo_expiracion < datetime.now(timezone.utc):
+        return RedirectResponse(url="/forgot", status_code=303)
+
+    # Si el código es correcto, reiniciamos las variables y permitimos el cambio de contraseña
     user.codigo = None
     user.codigo_expiracion = None
+    user.intentos = 0
+    user.ultimo_intento = None
     db.commit()
-    
+
     return RedirectResponse(url="/cambio", status_code=303)
 
 @app.get("/cambio", response_class=HTMLResponse)
 async def cambio(request: Request):
     return templates.TemplateResponse("cambio.html", {"request": request})
-
 
     
 @app.get("/usuarios", response_class=HTMLResponse)
@@ -171,12 +204,12 @@ async def usuarios(user_global: TokenData = Depends(get_current_user), db: Sessi
 
 
 @app.get("/admin", response_class=HTMLResponse)
-async def admin(request: Request):
+async def admin(request: Request):          
     return templates.TemplateResponse("admin.html", {"request": request})
 
 
 @app.post("/admin")
-async def admin(db: Session = Depends(get_db)):
+async def admin(db: Session = Depends(get_db)):       
     data = db.query(models.User).all()    
     return {"usuarios": data}    
             
