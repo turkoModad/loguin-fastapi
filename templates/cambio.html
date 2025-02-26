@@ -3,5 +3,32 @@
 {% block title %}Olvido{% endblock %}
 
 {% block content %}
-    <h2>Llegamos a la Recuperación de contraseña</h2>          
+<h2>Llegamos a la Recuperación de contraseña</h2> 
+
+<form id="passwordForm" action="/cambio" method="POST" onsubmit="return validarContraseña()">
+    <input type="hidden" name="email" value="{{ email }}">
+    <label for="password">Nueva Contraseña:</label>
+    <input type="password" id="password" name="password" required>
+    <br>
+    <label for="confirmPassword">Repetir Contraseña:</label>
+    <input type="password" id="confirmPassword" name="confirmPassword" required>
+    <br>
+    <span id="errorMensaje" style="color: red;"></span>
+    <br>
+    <button type="submit">Enviar</button>
+</form>
+
+<script>
+    function validarContraseña() {
+        const password = document.getElementById("password").value;
+        const confirmPassword = document.getElementById("confirmPassword").value;
+        const errorMensaje = document.getElementById("errorMensaje");
+        
+        if (password !== confirmPassword) {
+            errorMensaje.textContent = "Las contraseñas no coinciden.";
+            return false;
+        }
+        return true;
+    }
+    </script>
 {% endblock %}

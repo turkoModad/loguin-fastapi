@@ -3,7 +3,7 @@
 {% block title %}Olvido{% endblock %}
 
 {% block content %}
-    <h2>Bienvenido a la Página de recuperacion de contraseñas</h2>
+<h2>Bienvenido a la Página de recuperacion de contraseñas</h2>
 {% if request.query_params.get("message") %}
 <div class="alert alert-danger" role="alert">
     {{ request.query_params["message"] }}

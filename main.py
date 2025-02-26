@@ -136,13 +136,7 @@ async def forgot(request: Request):
 async def forgot(email: str = Form(...), db: Session = Depends(get_db)):    
     user = db.query(models.User).filter(models.User.email == email).first()
     if user:
-        codigo = generar_codigo(user)
-        expiracion = datetime.now(timezone.utc) + timedelta(minutes=5)
-        user.codigo = codigo
-        user.codigo_expiracion = expiracion
-        user.intentos = 0
-        db.commit()
-        db.refresh(user)
+        codigo = generar_codigo(user, db)
         send_recovery_email(email, codigo)    
         return RedirectResponse(url=f"/recuperar?email={email}", status_code=303) 
     else:
@@ -150,9 +144,8 @@ async def forgot(email: str = Form(...), db: Session = Depends(get_db)):
 
 
 @app.get("/recuperar", response_class=HTMLResponse)
-async def recuperar(request: Request):
-    email = request.query_params.get("email", "")    
-    return templates.TemplateResponse("recuperar.html", {"request": request, "email": email})
+async def recuperar(request: Request):        
+    return templates.TemplateResponse("recuperar.html", {"request": request, "email": request.query_params.get("email", "")})
 
 
 @app.post("/recuperacion", response_class=HTMLResponse)
@@ -178,7 +171,18 @@ async def recuperacion(codigo: str = Form(...), email: str = Form(...), db: Sess
 
 @app.get("/cambio", response_class=HTMLResponse)
 async def cambio(request: Request):
-    return templates.TemplateResponse("cambio.html", {"request": request})
+    email = request.query_params.get("email", "")
+    return templates.TemplateResponse("cambio.html", {"request": request, "email": email})
+
+
+@app.post("/cambio", response_class=HTMLResponse)
+async def cambio_contraseña(password: str = Form(...), email: str = Form(...), db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.email == email).first()
+    user.password_user = Hash.hash_password(password)
+    db.commit()
+    db.refresh(user)
+    print(user.password_user)    
+    return RedirectResponse(url="/", status_code=303)
 
     
 @app.get("/usuarios", response_class=HTMLResponse)

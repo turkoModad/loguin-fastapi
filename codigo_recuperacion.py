@@ -7,12 +7,20 @@ import os
 from db.database import get_db
 from sqlalchemy.orm import Session
 from fastapi import Depends
+from datetime import datetime, timedelta, timezone
 
 load_dotenv()
 
 
-def generar_codigo(user):
-    return str(random.randint(100000, 999999))
+def generar_codigo(user,db: Session = Depends(get_db)):
+    codigo = str(random.randint(100000, 999999))
+    expiracion = datetime.now(timezone.utc) + timedelta(minutes=5)
+    user.codigo = codigo
+    user.codigo_expiracion = expiracion
+    user.intentos = 0
+    db.commit()
+    db.refresh(user)
+    return codigo
 
 
 EMAIL_HOST = os.getenv("EMAIL_HOST")
