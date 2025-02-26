@@ -4,6 +4,11 @@
 
 {% block content %}
     <h2>Bienvenido a la Página de recuperacion de contraseñas</h2>
+{% if request.query_params.get("message") %}
+<div class="alert alert-danger" role="alert">
+    {{ request.query_params["message"] }}
+</div>
+{% endif %}
     <form action="/forgot" method="POST">
         <div class="mb-3">
             <label for="email-olvidado" class="form-label">Introduce tu Email</label>

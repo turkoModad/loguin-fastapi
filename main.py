@@ -5,6 +5,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
 from db.database import get_db, Base, engine
 from sqlalchemy.orm import Session
+from sqlalchemy import and_
 from db import models
 from passlib.context import CryptContext
 from hashing import Hash
@@ -17,7 +18,7 @@ from sqlalchemy import inspect
 from fastapi.exceptions import HTTPException
 from schemas import TokenData
 from oauth import get_current_user
-from codigo_recuperacion import generar_codigo, send_recovery_email
+from codigo_recuperacion import generar_codigo, send_recovery_email, resetear_codigo_recuperacion
 from datetime import datetime, timedelta, timezone
 import time
 
@@ -139,53 +140,41 @@ async def forgot(email: str = Form(...), db: Session = Depends(get_db)):
         expiracion = datetime.now(timezone.utc) + timedelta(minutes=5)
         user.codigo = codigo
         user.codigo_expiracion = expiracion
+        user.intentos = 0
         db.commit()
         db.refresh(user)
         send_recovery_email(email, codigo)    
-        return RedirectResponse(url="/recuperar", status_code=303) 
+        return RedirectResponse(url=f"/recuperar?email={email}", status_code=303) 
     else:
         raise HTTPException(status_code=404, detail="Email no registrado")   
 
 
 @app.get("/recuperar", response_class=HTMLResponse)
 async def recuperar(request: Request):
-    return templates.TemplateResponse("recuperar.html", {"request": request})
+    email = request.query_params.get("email", "")    
+    return templates.TemplateResponse("recuperar.html", {"request": request, "email": email})
 
 
 @app.post("/recuperacion", response_class=HTMLResponse)
-async def recuperacion(codigo: str = Form(...), db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.codigo == codigo).first()
+async def recuperacion(codigo: str = Form(...), email: str = Form(...), db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.email == email).first()
 
-    if not user:
-        # No existe el usuario; aquí podrías registrar el intento en otro lado si lo deseas
-        return RedirectResponse(url="/recuperar", status_code=303)
-
-    # Si han pasado más de 30 minutos desde el último intento, reiniciamos el contador
-    tiempo_limite = datetime.now(timezone.utc) - timedelta(minutes=30)
-    if user.ultimo_intento and user.ultimo_intento < tiempo_limite:
-        user.intentos = 0
-
-    # Incrementamos el contador de intentos y actualizamos la hora del último intento
-    user.intentos += 1
-    user.ultimo_intento = datetime.now(timezone.utc)
-    db.commit()  # Guardamos el incremento
-
-    # Verificamos si ya se alcanzó el límite de intentos (3 o más)
-    if user.intentos >= 3:
-        return RedirectResponse(url="/bloqueado", status_code=303)
-
-    # Verificamos si el código está expirado
-    if not user.codigo_expiracion or user.codigo_expiracion < datetime.now(timezone.utc):
-        return RedirectResponse(url="/forgot", status_code=303)
-
-    # Si el código es correcto, reiniciamos las variables y permitimos el cambio de contraseña
-    user.codigo = None
-    user.codigo_expiracion = None
-    user.intentos = 0
-    user.ultimo_intento = None
-    db.commit()
-
-    return RedirectResponse(url="/cambio", status_code=303)
+    if user.codigo == codigo and user.codigo_expiracion > datetime.now(timezone.utc) and user.intentos < 4:
+        resetear_codigo_recuperacion(user, db)
+        return RedirectResponse(url=f"/cambio?email={email}", status_code=303)
+    else:
+        user.intentos += 1
+        db.commit()
+        db.refresh(user)
+        if user.intentos > 3:
+            resetear_codigo_recuperacion(user, db)
+            return RedirectResponse(url="/forgot?message=Has%20superado%20el%20l%C3%ADmite%20de%20intentos.%20Por%20favor,%20intenta%20de%20nuevo%20m%C3%A1s%20tarde.", status_code=303)
+        elif user.codigo_expiracion < datetime.now(timezone.utc):
+            resetear_codigo_recuperacion(user, db)
+            return RedirectResponse(url="/forgot?message=El%20c%C3%B3digo%20ha%20expirado.%20Solicita%20uno%20nuevo.", status_code=303)
+        else:    
+            return RedirectResponse(url=f"/recuperar?email={email}", status_code=303)
+    
 
 @app.get("/cambio", response_class=HTMLResponse)
 async def cambio(request: Request):

@@ -4,6 +4,9 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from dotenv import load_dotenv
 import os
+from db.database import get_db
+from sqlalchemy.orm import Session
+from fastapi import Depends
 
 load_dotenv()
 
@@ -38,3 +41,12 @@ def send_recovery_email(email: str, codigo: str):
         print("Email enviado correctamente.")
     except Exception as e:
         print(f"Error al enviar el email: {e}")
+
+
+def resetear_codigo_recuperacion(user, db: Session = Depends(get_db)):
+    user.codigo = None
+    user.codigo_expiracion = None
+    user.intentos = 0
+    db.commit()
+    db.refresh(user)
+    return user
