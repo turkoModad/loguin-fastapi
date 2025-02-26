@@ -17,6 +17,7 @@
     <title>Document</title>
   </head>
   <body>
+    <div id="mensaje-error" style="color: red; font-weight: bold; display: none;"></div>
     <form>
       <div class="mb-3">
         <label for="exampleInputEmail1" class="form-label">Username</label>
@@ -64,6 +65,16 @@
     crossorigin="anonymous"
   ></script>
   <script>
+    function obtenerParametro(nombre) {
+    const params = new URLSearchParams(window.location.search);
+    return params.get(nombre);
+    }
+    const mensaje = obtenerParametro("message");
+    if (mensaje) {
+        const mensajeDiv = document.getElementById("mensaje-error");
+        mensajeDiv.textContent = decodeURIComponent(mensaje);
+        mensajeDiv.style.display = "block";
+    }
     var form = document.querySelector('form');
     form.onsubmit = (event) => {
       event.preventDefault();

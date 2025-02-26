@@ -134,13 +134,21 @@ async def forgot(request: Request):
 
 @app.post("/forgot")
 async def forgot(email: str = Form(...), db: Session = Depends(get_db)):    
-    user = db.query(models.User).filter(models.User.email == email).first()
+    user = db.query(models.User).filter(models.User.email == email).first()    
     if user:
-        codigo = generar_codigo(user, db)
-        send_recovery_email(email, codigo)    
-        return RedirectResponse(url=f"/recuperar?email={email}", status_code=303) 
+        if user.codigo_expiracion and user.codigo == None:
+            if user.codigo_expiracion < datetime.now(timezone.utc):
+                codigo = generar_codigo(user, db)
+                send_recovery_email(email, codigo)    
+                return RedirectResponse(url=f"/recuperar?email={email}", status_code=303) 
+            else:
+                return RedirectResponse(url="/", status_code=303)
+        else:            
+            codigo = generar_codigo(user, db)
+            send_recovery_email(email, codigo)    
+            return RedirectResponse(url=f"/recuperar?email={email}", status_code=303) 
     else:
-        raise HTTPException(status_code=404, detail="Email no registrado")   
+        return RedirectResponse(url=f"/?message=El%20email%20no%20esta%20registrado.", status_code=303)  
 
 
 @app.get("/recuperar", response_class=HTMLResponse)
@@ -151,7 +159,6 @@ async def recuperar(request: Request):
 @app.post("/recuperacion", response_class=HTMLResponse)
 async def recuperacion(codigo: str = Form(...), email: str = Form(...), db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.email == email).first()
-
     if user.codigo == codigo and user.codigo_expiracion > datetime.now(timezone.utc) and user.intentos < 4:
         resetear_codigo_recuperacion(user, db)
         return RedirectResponse(url=f"/cambio?email={email}", status_code=303)
@@ -161,6 +168,10 @@ async def recuperacion(codigo: str = Form(...), email: str = Form(...), db: Sess
         db.refresh(user)
         if user.intentos > 3:
             resetear_codigo_recuperacion(user, db)
+            expiracion = datetime.now(timezone.utc) + timedelta(minutes=60)
+            user.codigo_expiracion = expiracion
+            db.commit()
+            db.refresh(user)
             return RedirectResponse(url="/forgot?message=Has%20superado%20el%20l%C3%ADmite%20de%20intentos.%20Por%20favor,%20intenta%20de%20nuevo%20m%C3%A1s%20tarde.", status_code=303)
         elif user.codigo_expiracion < datetime.now(timezone.utc):
             resetear_codigo_recuperacion(user, db)
