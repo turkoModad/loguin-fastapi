@@ -47,8 +47,7 @@ templates = Jinja2Templates(directory="templates")
 logger = logging.getLogger("main")
 
 class MiMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        # Rutas protegidas y método POST
+    async def dispatch(self, request: Request, call_next):        
         rutas_protegidas = ["/admin", "/usuarios"]
 
         if request.method == "POST" and request.url.path in rutas_protegidas:
