@@ -21,7 +21,7 @@ from oauth import get_current_user
 from codigo_recuperacion import generar_codigo, send_recovery_email, resetear_codigo_recuperacion
 from datetime import datetime, timedelta, timezone
 import time
-
+from fastapi import Request, HTTPException, status
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -30,7 +30,7 @@ def create_tables():
     check = inspect(engine)
     existing_tables = check.get_table_names()
     if len(existing_tables) > 0:
-        print("Tables already exist")        
+        print("Tables already exist")
     else:
         Base.metadata.create_all(bind=engine)
 
@@ -42,43 +42,77 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 
-from starlette.middleware.base import BaseHTTPMiddleware
-from fastapi import Request, HTTPException, status
+# class MiMiddleware(BaseHTTPMiddleware):
+#     async def dispatch(self, request: Request, call_next):
+#         if request.url.path in ["/admin", "/usuarios"] and request.method == "POST":
+#             token = request.headers.get("Authorization")
+#             credentials_exception = HTTPException(
+#                 status_code=status.HTTP_401_UNAUTHORIZED,
+#                 detail="Could not validate credentials",
+#                 headers={"WWW-Authenticate": "Bearer"},
+#             )
+#             if not token:
+#                 raise credentials_exception
 
+#             if not token.startswith("Bearer "):
+#                 raise credentials_exception
+
+#             token = token.split(" ")[1]
+#             if len(token.split(".")) != 3:
+#                 raise credentials_exception
+
+#             if not verify_token(token, credentials_exception):
+#                 raise credentials_exception
+#         return await call_next(request)
+
+from fastapi.responses import RedirectResponse
+from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
-from fastapi import Request, HTTPException, status
+from starlette.status import HTTP_303_SEE_OTHER
+import logging
+
+logger = logging.getLogger("main")
 
 class MiMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        # Definimos las rutas protegidas y el método (POST)
-        if request.url.path in ["/admin", "/usuarios"] and request.method == "POST":
+        # Rutas protegidas y método POST
+        rutas_protegidas = ["/admin", "/usuarios"]
+
+        if request.method == "POST" and request.url.path in rutas_protegidas:
             token = request.headers.get("Authorization")
-            credentials_exception = HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not validate credentials",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-            # Si no se envía el token, lanza la excepción
+
             if not token:
-                raise credentials_exception
+                logger.warning("No se envió el token de autenticación.")
+                return RedirectResponse(url="/", status_code=HTTP_303_SEE_OTHER)
 
-            # Verifica que tenga el prefijo "Bearer "
+            # Verifica que el token tenga el prefijo "Bearer "
             if not token.startswith("Bearer "):
-                raise credentials_exception
+                logger.warning("Token mal formateado: Falta el prefijo 'Bearer '.")
+                return RedirectResponse(url="/", status_code=HTTP_303_SEE_OTHER)
 
-            # Extrae el token
+            # Extraer solo el token
             token = token.split(" ")[1]
-            # Verifica que el token tenga tres partes separadas por puntos (formato JWT)
+
+            # Verificar estructura JWT (3 partes separadas por ".")
             if len(token.split(".")) != 3:
-                raise credentials_exception
+                logger.warning("Token inválido: No tiene tres partes.")
+                return RedirectResponse(url="/", status_code=HTTP_303_SEE_OTHER)
 
-            # Si la verificación del token falla, lanza la excepción
-            if not verify_token(token, credentials_exception):
-                raise credentials_exception
+            # Llamar a la función que valida el token
+            try:
+                credentials_exception = HTTPException(
+                    status_code=401,
+                    detail="No tienes permisos para esta acción",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+                verify_token(token, credentials_exception)  # Verificamos el token
 
-        # Si no se cumple la condición (por ejemplo, GET o rutas no protegidas), continúa
+            except Exception as e:
+                logger.error(f"Error al verificar token: {e}")
+                return RedirectResponse(url="/", status_code=HTTP_303_SEE_OTHER)
+
+        # Si la ruta no está protegida, continuar normalmente
         return await call_next(request)
-    
 
 app.add_middleware(MiMiddleware)
 
@@ -102,12 +136,12 @@ async def signup(request: Request):
 async def signup(username: str = Form(...), password_user: str = Form(...), firstname: str = Form(...), lastname: str = Form(...), country: str = Form(...), email: str = Form(...) ,db: Session = Depends(get_db)):
     password_hash = Hash.hash_password(password_user)
     nuevo_usuario = models.User(
-        username=username, 
-        password_user=password_hash, 
-        firstname=firstname, 
-        lastname=lastname, 
+        username=username,
+        password_user=password_hash,
+        firstname=firstname,
+        lastname=lastname,
         country=country,
-        email = email,        
+        email = email,
     )
     db.add(nuevo_usuario)
     db.commit()
@@ -116,43 +150,43 @@ async def signup(username: str = Form(...), password_user: str = Form(...), firs
 
 
 @app.post("/login", status_code=status.HTTP_200_OK)
-async def login(usuario : OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):    
+async def login(usuario : OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     autenticacion = auth.auth_user(usuario, db)
-    if autenticacion:        
+    if autenticacion:
         user = db.query(models.User).filter(models.User.username == usuario.username).first()
         autenticacion['username'] = usuario.username
         autenticacion['rol'] = user.rol
         if not user:
-            raise HTTPException(status_code=404, detail="User not found")    
-    return autenticacion  
+            raise HTTPException(status_code=404, detail="User not found")
+    return autenticacion
 
 
 @app.get("/forgot", response_class=HTMLResponse)
 async def forgot(request: Request):
     return templates.TemplateResponse("forgot.html", {"request": request})
-    
+
 
 @app.post("/forgot")
-async def forgot(email: str = Form(...), db: Session = Depends(get_db)):    
-    user = db.query(models.User).filter(models.User.email == email).first()    
+async def forgot(email: str = Form(...), db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.email == email).first()
     if user:
         if user.codigo_expiracion and user.codigo == None:
             if user.codigo_expiracion < datetime.now(timezone.utc):
                 codigo = generar_codigo(user, db)
-                send_recovery_email(email, codigo)    
-                return RedirectResponse(url=f"/recuperar?email={email}", status_code=303) 
+                send_recovery_email(email, codigo)
+                return RedirectResponse(url=f"/recuperar?email={email}", status_code=303)
             else:
                 return RedirectResponse(url="/", status_code=303)
-        else:            
+        else:
             codigo = generar_codigo(user, db)
-            send_recovery_email(email, codigo)    
-            return RedirectResponse(url=f"/recuperar?email={email}", status_code=303) 
+            send_recovery_email(email, codigo)
+            return RedirectResponse(url=f"/recuperar?email={email}", status_code=303)
     else:
-        return RedirectResponse(url=f"/?message=El%20email%20no%20esta%20registrado.", status_code=303)  
+        return RedirectResponse(url=f"/?message=El%20email%20no%20esta%20registrado.", status_code=303)
 
 
 @app.get("/recuperar", response_class=HTMLResponse)
-async def recuperar(request: Request):        
+async def recuperar(request: Request):
     return templates.TemplateResponse("recuperar.html", {"request": request, "email": request.query_params.get("email", "")})
 
 
@@ -176,9 +210,9 @@ async def recuperacion(codigo: str = Form(...), email: str = Form(...), db: Sess
         elif user.codigo_expiracion < datetime.now(timezone.utc):
             resetear_codigo_recuperacion(user, db)
             return RedirectResponse(url="/forgot?message=El%20c%C3%B3digo%20ha%20expirado.%20Solicita%20uno%20nuevo.", status_code=303)
-        else:    
+        else:
             return RedirectResponse(url=f"/recuperar?email={email}", status_code=303)
-    
+
 
 @app.get("/cambio", response_class=HTMLResponse)
 async def cambio(request: Request):
@@ -192,31 +226,54 @@ async def cambio_contraseña(password: str = Form(...), email: str = Form(...), 
     user.password_user = Hash.hash_password(password)
     db.commit()
     db.refresh(user)
-    print(user.password_user)    
     return RedirectResponse(url="/", status_code=303)
 
-    
+
 @app.get("/usuarios", response_class=HTMLResponse)
-async def usuarios(request: Request):                     
+async def usuarios(request: Request):
     return templates.TemplateResponse("usuarios.html", {"request": request})
 
 
 @app.post("/usuarios")
 async def usuarios(user_global: TokenData = Depends(get_current_user), db: Session = Depends(get_db)):
-    datos = db.query(models.User).filter(models.User.username == user_global.username).first()   
-    return {'usuario': datos}    
+    datos = db.query(models.User).filter(models.User.username == user_global.username).first()
+    if not datos:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuario no encontrado"
+        )
+    elif datos.rol!= "user":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permisos para acceder a esta ruta"
+        )
+    else:
+        return {'usuario': datos}
 
 
 @app.get("/admin", response_class=HTMLResponse)
-async def admin(request: Request):          
+async def admin(request: Request):
     return templates.TemplateResponse("admin.html", {"request": request})
 
 
 @app.post("/admin")
-async def admin(db: Session = Depends(get_db)):       
-    data = db.query(models.User).all()    
-    return {"usuarios": data}    
-            
+async def admin(user_global: TokenData = Depends(get_current_user), db: Session = Depends(get_db)):
+    datos = db.query(models.User).filter(models.User.username == user_global.username).first()
+    if datos.rol!= "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permisos para acceder a esta ruta"
+        )
+
+    data = db.query(models.User).all()
+    if not data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No hay usuarios en la base de datos"
+        )
+    return {"usuarios": data}
+
+
 
 if __name__ == "__main__":
     uvicorn.run('main:app', port=8001, reload=True)
