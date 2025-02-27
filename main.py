@@ -5,7 +5,6 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
 from db.database import get_db, Base, engine
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
 from db import models
 from passlib.context import CryptContext
 from hashing import Hash
@@ -50,7 +49,7 @@ class MiMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):        
         rutas_protegidas = ["/admin", "/usuarios"]
 
-        if request.method == "POST" and request.url.path in rutas_protegidas:
+        if request.method == "POST" and any(request.url.path.startswith(prefijo) for prefijo in rutas_protegidas):
             token = request.headers.get("Authorization")
 
             if not token:
@@ -238,6 +237,44 @@ async def admin(user_global: TokenData = Depends(get_current_user), db: Session 
             detail="No hay usuarios en la base de datos"
         )
     return {"usuarios": data}
+
+
+@app.get("/admin/usuario/{id}")
+async def get_user(id: int, db: Session = Depends(get_db), user_global: TokenData = Depends(get_current_user)): 
+    if user_global.rol != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permisos para acceder a esta ruta"
+        )  
+    usuario = db.query(models.User).filter(models.User.id == id).first()
+    if not usuario:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")   
+    return usuario
+
+
+@app.post("/admin/usuario/{id}/editar")
+async def update_user(id: int, email: str = Form(...), rol: str = Form(...), password : str = Form(...), db: Session = Depends(get_db), user_global: TokenData = Depends(get_current_user)):
+    if user_global.rol != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permisos para acceder a esta ruta"
+        )
+
+    usuario = db.query(models.User).filter(models.User.id == id).first()
+
+    if not usuario:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado") 
+
+    if email != usuario.email:
+        usuario.email = email
+    if rol != usuario.rol:
+        usuario.rol = rol
+    if password != usuario.password_user:
+        usuario.password_user = Hash.hash_password(password)
+
+    db.commit()
+    db.refresh(usuario)
+    return {"message": "Usuario actualizado exitosamente"}
 
 
 if __name__ == "__main__":
