@@ -240,8 +240,9 @@ async def admin(user_global: TokenData = Depends(get_current_user), db: Session 
 
 
 @app.get("/admin/usuario/{id}")
-async def get_user(id: int, db: Session = Depends(get_db), user_global: TokenData = Depends(get_current_user)): 
-    if user_global.rol != "admin":
+async def get_user(id: int, db: Session = Depends(get_db), user_global: TokenData = Depends(get_current_user)):   
+    datos = db.query(models.User).filter(models.User.username == user_global.username).first()   
+    if datos.rol != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes permisos para acceder a esta ruta"
@@ -254,7 +255,8 @@ async def get_user(id: int, db: Session = Depends(get_db), user_global: TokenDat
 
 @app.post("/admin/usuario/{id}/editar")
 async def update_user(id: int, email: str = Form(...), rol: str = Form(...), password : str = Form(...), db: Session = Depends(get_db), user_global: TokenData = Depends(get_current_user)):
-    if user_global.rol != "admin":
+    datos = db.query(models.User).filter(models.User.username == user_global.username).first()
+    if datos.rol != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes permisos para acceder a esta ruta"
