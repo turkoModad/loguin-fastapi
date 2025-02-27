@@ -5,14 +5,17 @@
 {% block content %}
 <style>
     .hidden { display: none; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid black; padding: 8px; text-align: left; }
-    th { background-color: #f2f2f2; }
+    .contenedor { width: 90%; max-width: 800px; margin: 20px auto; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #f8f8f8; }
+    .mensaje-error { color: red; font-weight: bold; text-align: center; margin-top: 20px; }
 </style>
-</head>
-<body>
+
+<div class="contenedor">
+    <h2>Usuario Logueado</h2>
+
     <div id="mostrar" class="hidden">
-        <h2>Usuario Logueado</h2>
         <table>
             <thead>
                 <tr>
@@ -29,21 +32,21 @@
     </div>
 
     <div id="invalido" class="hidden">
-        <p>Autenticación inválida. Redirigiendo...</p>
+        <p class="mensaje-error">Autenticación inválida. Redirigiendo...</p>
     </div>
+</div>
 
-    <script>
-        var accessToken = localStorage.getItem('access_token');
-        var tokenType = localStorage.getItem('token_type');
-        var UserGlobal = localStorage.getItem('username'); 
-        var rolGlobal = localStorage.getItem('rol');       
+<script>
+    var accessToken = localStorage.getItem('access_token');
+    var tokenType = localStorage.getItem('token_type');
+    var UserGlobal = localStorage.getItem('username'); 
+    var rolGlobal = localStorage.getItem('rol');       
 
-        if (accessToken && tokenType && accessToken.split('.').length === 3) {
-            if (rolGlobal === 'admin') {
-                window.location.href = '/admin';
-            }
-            else {
-                fetch('usuarios', {
+    if (accessToken && tokenType && accessToken.split('.').length === 3) {
+        if (rolGlobal === 'admin') {
+            window.location.href = '/admin';
+        } else {
+            fetch('usuarios', {
                 method: 'POST',
                 headers: {
                     'Authorization': `${tokenType} ${accessToken}`,
@@ -68,7 +71,7 @@
                     return;
                 }
 
-                tabla.innerHTML = ''; // Limpiamos la tabla antes de agregar datos
+                tabla.innerHTML = ''; 
 
                 if (!usuario) {
                     tabla.innerHTML = `<tr><td colspan="6">No hay datos del usuario</td></tr>`;
@@ -98,15 +101,15 @@
                     window.location.href = '/'; 
                 }, 2000);
             });                
-            }
-        } else {
-            document.querySelector('#mostrar').classList.add('hidden');
-            document.querySelector('#invalido').classList.remove('hidden');
+        }
+    } else {
+        document.querySelector('#mostrar').classList.add('hidden');
+        document.querySelector('#invalido').classList.remove('hidden');
 
-            console.error('Token inválido');
-            setTimeout(function() {
-                window.location.href = '/';                
-            }, 2000);
-        }        
-    </script>
+        console.error('Token inválido');
+        setTimeout(function() {
+            window.location.href = '/';                
+        }, 2000);
+    }        
+</script>
 {% endblock %}

@@ -1,20 +1,60 @@
 {% extends "components/layout.html" %}
 
-{% block title %}Olvido{% endblock %}
+{% block title %}Recuperar Contraseña{% endblock %}
 
 {% block content %}
-<h2>Bienvenido a la Página de recuperacion de contraseñas</h2>
-{% if request.query_params.get("message") %}
-<div class="alert alert-danger" role="alert">
-    {{ request.query_params["message"] }}
-</div>
-{% endif %}
-    <form action="/forgot" method="POST">
-        <div class="mb-3">
-            <label for="email-olvidado" class="form-label">Introduce tu Email</label>
-			<input name="email" type="email" class="form-control" id="validationDefaultEmail" required>
+<style>
+    .contenedor { 
+        width: 90%; 
+        max-width: 400px; 
+        margin: 50px auto; 
+        text-align: center; 
+    }
+    .alert { 
+        color: #d9534f; 
+        background-color: #f2dede; 
+        padding: 10px; 
+        margin-bottom: 15px; 
+        border-radius: 5px; 
+    }
+    input { 
+        width: 100%; 
+        padding: 10px; 
+        margin-top: 10px; 
+        margin-bottom: 15px;
+        border: 1px solid #ccc; 
+        border-radius: 5px; 
+    }
+    button { 
+        width: 100%; 
+        padding: 10px; 
+        background-color: #007bff; 
+        color: white; 
+        border: none; 
+        border-radius: 5px; 
+        cursor: pointer; 
+        margin-top: 10px; 
+    }
+    button:hover { 
+        background-color: #0056b3; 
+    }
+</style>
+
+
+<div class="contenedor">
+    <h2>Recuperar Contraseña</h2>
+
+    {% if request.query_params.get("message") %}
+        <div class="alert">
+            {{ request.query_params["message"] }}
         </div>
-        <button type="submit" class="btn btn-primary">Enviar</button>
+    {% endif %}
+
+    <form action="/forgot" method="POST">
+        <label for="email-olvidado">Introduce tu Email</label>
+        <input name="email" type="email" id="email-olvidado" required>
+        <button type="submit">Enviar</button>
     </form>
-    
+</div>
 {% endblock %}
+

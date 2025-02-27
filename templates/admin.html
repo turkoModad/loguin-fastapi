@@ -34,9 +34,7 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Formulario de Edición -->
+    </div>   
     <div id="formulario-editar" class="card mt-4">
         <div class="card-header">
             <h4 class="card-title">Editar Usuario</h4>
@@ -67,9 +65,8 @@
 <script>
     var accessToken = localStorage.getItem('access_token');
     var tokenType = localStorage.getItem('token_type');
-    var role = localStorage.getItem('rol'); 
+    var role = localStorage.getItem('rol');
 
-    // Verificar el acceso y mostrar datos de los usuarios
     if (accessToken && tokenType && accessToken.split('.').length === 3 && role === 'admin') {            
         fetch('admin', {
             method: 'POST',
@@ -78,8 +75,7 @@
             }
         })
         .then(response => response.json())
-        .then(data => {
-            // Mostrar lista de usuarios
+        .then(data => {            
             for (var usuario of data.usuarios) {
                 var lista = `
                     <tr>
@@ -108,8 +104,6 @@
             window.location.href = '/';                
         }, 2000);
     }
-
-    // Función para cargar los datos del usuario en el formulario de edición
     function editarUsuario(id) {
         fetch(`admin/usuario/${id}`, {
             method: 'GET',
@@ -123,7 +117,6 @@
             document.querySelector('#edit-password').value = "232323";
             document.querySelector('#edit-rol').value = usuario.rol;
             
-            // Enviar los cambios del formulario
             document.querySelector('#form-editar-usuario').onsubmit = function(event) {
                 event.preventDefault();
                 
@@ -142,9 +135,8 @@
                     return response.json();
                 })
                 .then(data => {
-                    alert('Usuario actualizado correctamente');
-                    // Actualizar la lista de usuarios
-                    location.reload(); // Esto recargará la página para reflejar los cambios
+                    alert('Usuario actualizado correctamente');                   
+                    location.reload();
                 })
                 .catch(error => {
                     alert('Error: ' + error.message);

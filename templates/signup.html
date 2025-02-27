@@ -3,70 +3,91 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
+<style>    
+    .contenedor-form {
+        width: 100%;
+        margin: 50px auto;
+    }
+    
+    .form-control,
+    .form-select{
+        width: 70%;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    button{
+		width: 30%;
+        margin-left: auto;
+        margin-right: auto;
+	}
+    .form-label {
+        text-align: left;
+        display: block;
+    }
+</style>
 
-	<div class="row m-md-5 m-3">
-		<h1 class="col">FastAPI form</h1>
-	</div>	
-	<form method="post" action="/signup" class="row g-3 mx-sm-5 mx-2" onsubmit="return validatePasswords()">
-		<div class="col mb-4">
-			<label for="validationDefault01" class="form-label">Firstname</label>
-			<input name="firstname" type="text" class="form-control" id="validationDefault01" required>
-		</div>
-		<div class="col mb-4">
-			<label for="validationDefault02" class="form-label">Lastname</label>
-			<input name="lastname" type="text" class="form-control" id="validationDefault02" required>
-		</div>
-		<div class="col-md-3 mb-4">
-			<label for="validationDefaultUsername" class="form-label">Username</label>
-			<div class="input-group">
-				<span class="input-group-text" id="inputGroupPrepend2">@</span>
-				<input name="username" type="text" class="form-control" id="validationDefaultUsername" aria-describedby="inputGroupPrepend2" required>
-			</div>
-		</div>
-		<div class="col-md-3 mb-4">
-			<label for="validationDefaultEmail" class="form-label">Email</label>
-			<input name="email" type="email" class="form-control" id="validationDefaultEmail" required>
-		</div>
+<div class="contenedor-form">
+    <div class="row m-md-5 m-3">
+        <h1 class="col text-center">FastAPI form</h1>
+    </div>	
+    <form method="post" action="/signup" class="row g-3 mx-sm-5 mx-2" onsubmit="return validatePasswords()">
+        <div class="col mb-4">
+            <label for="validationDefault01" class="form-label">Firstname</label>
+            <input name="firstname" type="text" class="form-control" id="validationDefault01" required>
+        </div>
+        <div class="col mb-4">
+            <label for="validationDefault02" class="form-label">Lastname</label>
+            <input name="lastname" type="text" class="form-control" id="validationDefault02" required>
+        </div>
+        <div class="col-md-3 mb-4">
+            <label for="validationDefaultUsername" class="form-label">Username</label>
+            <div class="input-group">
+                <span class="input-group-text" id="inputGroupPrepend2">@</span>
+                <input name="username" type="text" class="form-control" id="validationDefaultUsername" aria-describedby="inputGroupPrepend2" required>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <label for="validationDefaultEmail" class="form-label">Email</label>
+            <input name="email" type="email" class="form-control" id="validationDefaultEmail" required>
+        </div>
+        <div class="col-md-3 mb-4">
+            <label for="validationDefault04" class="form-label">Country</label>
+            <select name="country" class="form-select" id="validationDefault04" required>
+                <option value="Argentina">Argentina</option>
+                <option value="Canada">Canada</option>
+                <option value="Colombia">Colombia</option>
+                <option value="EEUU">EEUU</option>
+                <option value="Venezuela">Venezuela</option>
+            </select>
+        </div>
+        <div class="col-md-3 mb-4">
+            <label for="validationDefault05" class="form-label">Password</label>
+            <input name="password_user" type="password" class="form-control" id="validationDefault05" required>
+        </div>
+        <div class="col-md-3 mb-4">
+            <label for="repeatPassword" class="form-label">Repeat Password</label>
+            <input name="repeat_password" type="password" class="form-control" id="repeatPassword" required>
+            <small id="passwordError" class="text-danger d-none">Passwords do not match</small>
+        </div>
+        <div class="col-12 text-center">
+            <button type="submit" class="btn btn-primary">Send Data</button>
+        </div>
+    </form>	
 
-		<div class="col-md-3 mb-4">
-			<label for="validationDefault04" class="form-label">Country</label>
-			<select name="country" class="form-select" id="validationDefault04" required>
-				<option value="Argentina">Argentina</option>
-				<option value="Canada">Canada</option>
-				<option value="Colombia">Colombia</option>
-				<option value="EEUU">EEUU</option>
-				<option value="Venezuela">Venezuela</option>
-			</select>
-		</div>
-		<div class="col-md-3 mb-4">
-			<label for="validationDefault05" class="form-label">Password</label>
-			<input name="password_user" type="password" class="form-control" id="validationDefault05" required>
-		</div>
-		<div class="col-md-3 mb-4">
-			<label for="repeatPassword" class="form-label">Repeat Password</label>
-			<input name="repeat_password" type="password" class="form-control" id="repeatPassword" required>
-			<small id="passwordError" class="text-danger d-none">Passwords do not match</small>
-		</div>
-		<div class="col-12">
-			<button type="submit" class="btn btn-primary">Send Data</button>
-		</div>
-	</form>	
+    <script>
+        function validatePasswords() {
+            let password = document.getElementById("validationDefault05").value;
+            let repeatPassword = document.getElementById("repeatPassword").value;
+            let errorText = document.getElementById("passwordError");
 
-	<script>
-		function validatePasswords() {
-			let password = document.getElementById("validationDefault05").value;
-			let repeatPassword = document.getElementById("repeatPassword").value;
-			let errorText = document.getElementById("passwordError");
-
-			if (password !== repeatPassword) {
-				errorText.classList.remove("d-none"); // Mostrar mensaje de error
-				return false; // Evitar que se envíe el formulario
-			} else {
-				errorText.classList.add("d-none"); // Ocultar mensaje si coinciden
-				return true;
-			}
-		}
-	</script>
-
+            if (password !== repeatPassword) {
+                errorText.classList.remove("d-none"); 
+                return false;
+            } else {
+                errorText.classList.add("d-none");
+                return true;
+            }
+        }
+    </script>
+</div>
 {% endblock %}
-
