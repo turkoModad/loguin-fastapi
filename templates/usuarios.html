@@ -1,15 +1,14 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Usuario Logueado</title>
-    <style>
-        .hidden { display: none; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid black; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-    </style>
+{% extends "components/layout.html" %}
+
+{% block title %}Usuario Logueado{% endblock %}
+
+{% block content %}
+<style>
+    .hidden { display: none; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid black; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+</style>
 </head>
 <body>
     <div id="mostrar" class="hidden">
@@ -110,5 +109,4 @@
             }, 2000);
         }        
     </script>
-</body>
-</html>
+{% endblock %}

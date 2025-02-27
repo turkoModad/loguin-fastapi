@@ -22,6 +22,8 @@ from codigo_recuperacion import generar_codigo, send_recovery_email, resetear_co
 from datetime import datetime, timedelta, timezone
 import time
 from fastapi import Request, HTTPException, status
+from starlette.status import HTTP_303_SEE_OTHER
+import logging
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -42,35 +44,6 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 
-# class MiMiddleware(BaseHTTPMiddleware):
-#     async def dispatch(self, request: Request, call_next):
-#         if request.url.path in ["/admin", "/usuarios"] and request.method == "POST":
-#             token = request.headers.get("Authorization")
-#             credentials_exception = HTTPException(
-#                 status_code=status.HTTP_401_UNAUTHORIZED,
-#                 detail="Could not validate credentials",
-#                 headers={"WWW-Authenticate": "Bearer"},
-#             )
-#             if not token:
-#                 raise credentials_exception
-
-#             if not token.startswith("Bearer "):
-#                 raise credentials_exception
-
-#             token = token.split(" ")[1]
-#             if len(token.split(".")) != 3:
-#                 raise credentials_exception
-
-#             if not verify_token(token, credentials_exception):
-#                 raise credentials_exception
-#         return await call_next(request)
-
-from fastapi.responses import RedirectResponse
-from fastapi import Request
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.status import HTTP_303_SEE_OTHER
-import logging
-
 logger = logging.getLogger("main")
 
 class MiMiddleware(BaseHTTPMiddleware):
@@ -85,33 +58,27 @@ class MiMiddleware(BaseHTTPMiddleware):
                 logger.warning("No se envió el token de autenticación.")
                 return RedirectResponse(url="/", status_code=HTTP_303_SEE_OTHER)
 
-            # Verifica que el token tenga el prefijo "Bearer "
             if not token.startswith("Bearer "):
                 logger.warning("Token mal formateado: Falta el prefijo 'Bearer '.")
                 return RedirectResponse(url="/", status_code=HTTP_303_SEE_OTHER)
 
-            # Extraer solo el token
             token = token.split(" ")[1]
 
-            # Verificar estructura JWT (3 partes separadas por ".")
             if len(token.split(".")) != 3:
                 logger.warning("Token inválido: No tiene tres partes.")
                 return RedirectResponse(url="/", status_code=HTTP_303_SEE_OTHER)
-
-            # Llamar a la función que valida el token
             try:
                 credentials_exception = HTTPException(
                     status_code=401,
                     detail="No tienes permisos para esta acción",
                     headers={"WWW-Authenticate": "Bearer"},
                 )
-                verify_token(token, credentials_exception)  # Verificamos el token
+                verify_token(token, credentials_exception)
 
             except Exception as e:
                 logger.error(f"Error al verificar token: {e}")
                 return RedirectResponse(url="/", status_code=HTTP_303_SEE_OTHER)
 
-        # Si la ruta no está protegida, continuar normalmente
         return await call_next(request)
 
 app.add_middleware(MiMiddleware)
@@ -272,7 +239,6 @@ async def admin(user_global: TokenData = Depends(get_current_user), db: Session 
             detail="No hay usuarios en la base de datos"
         )
     return {"usuarios": data}
-
 
 
 if __name__ == "__main__":
