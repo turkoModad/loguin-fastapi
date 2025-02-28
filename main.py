@@ -43,6 +43,12 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 
+#ruta de salud para render
+@app.get("/health")
+def health_check():
+    return {"status": "OK"}
+
+
 logger = logging.getLogger("main")
 
 class MiMiddleware(BaseHTTPMiddleware):
