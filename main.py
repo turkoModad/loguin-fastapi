@@ -280,4 +280,8 @@ async def update_user(id: int, email: str = Form(...), rol: str = Form(...), pas
 
 
 if __name__ == "__main__":
-    uvicorn.run('main:app', port=8001, reload=True)
+    #para desarrollo
+    #uvicorn.run('main:app', port=8001, reload=True)
+
+    # para produccion
+    uvicorn.run("main:app", host="0.0.0.0", port=8000)
