@@ -19,7 +19,7 @@ from schemas import TokenData
 from oauth import get_current_user
 from codigo_recuperacion import generar_codigo, send_recovery_email, resetear_codigo_recuperacion
 from datetime import datetime, timedelta, timezone
-import time
+import os
 from starlette.status import HTTP_303_SEE_OTHER
 import logging
 
@@ -290,8 +290,5 @@ async def update_user(id: int, email: str = Form(...), rol: str = Form(...), pas
 
 
 if __name__ == "__main__":
-    #para desarrollo
-    #uvicorn.run('main:app', port=8001, reload=True)
-
-    # para produccion
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
