@@ -11,10 +11,9 @@ from datetime import datetime, timedelta, timezone
 
 load_dotenv()
 
-
-def generar_codigo(user,db: Session = Depends(get_db)):
+def generar_codigo(user,db: Session):
     codigo = str(random.randint(100000, 999999))
-    expiracion = datetime.now(timezone.utc) + timedelta(minutes=5)
+    expiracion = datetime.now(timezone.utc) + timedelta(minutes=10)
     user.codigo = codigo
     user.codigo_expiracion = expiracion
     user.intentos = 0
@@ -51,7 +50,7 @@ def send_recovery_email(email: str, codigo: str):
         print(f"Error al enviar el email: {e}")
 
 
-def resetear_codigo_recuperacion(user, db: Session = Depends(get_db)):
+def resetear_codigo_recuperacion(user, db):
     user.codigo = None
     user.codigo_expiracion = None
     user.intentos = 0

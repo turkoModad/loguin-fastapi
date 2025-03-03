@@ -20,7 +20,6 @@ from oauth import get_current_user
 from codigo_recuperacion import generar_codigo, send_recovery_email, resetear_codigo_recuperacion
 from datetime import datetime, timedelta, timezone
 import time
-from fastapi import Request, HTTPException, status
 from starlette.status import HTTP_303_SEE_OTHER
 import logging
 
@@ -123,12 +122,13 @@ async def signup(username: str = Form(...), password_user: str = Form(...), firs
 @app.post("/login", status_code=status.HTTP_200_OK)
 async def login(usuario : OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     autenticacion = auth.auth_user(usuario, db)
-    if autenticacion:
-        user = db.query(models.User).filter(models.User.username == usuario.username).first()
-        autenticacion['username'] = usuario.username
-        autenticacion['rol'] = user.rol
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
+    if not autenticacion:
+        raise HTTPException(status_code=401, detail="Credenciales inválidas")
+    user = db.query(models.User).filter(models.User.username == usuario.username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    autenticacion['username'] = usuario.username
+    autenticacion['rol'] = user.rol
     return autenticacion
 
 
@@ -139,50 +139,53 @@ async def forgot(request: Request):
 
 @app.post("/forgot")
 async def forgot(email: str = Form(...), db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.email == email).first()
-    if user:
-        if user.codigo_expiracion and user.codigo == None:
-            if user.codigo_expiracion < datetime.now(timezone.utc):
-                codigo = generar_codigo(user, db)
-                send_recovery_email(email, codigo)
-                return RedirectResponse(url=f"/recuperar?email={email}", status_code=303)
-            else:
-                return RedirectResponse(url="/", status_code=303)
-        else:
+    user = db.query(models.User).filter(models.User.email == email).first()    
+    if user:               
+        if user.codigo is None and user.codigo_expiracion is not None:
+            if user.codigo_expiracion < datetime.now(timezone.utc):                
+                user.codigo_expiracion = None
+                db.commit()
+                db.refresh(user)
+
+        if user.codigo is None:
             codigo = generar_codigo(user, db)
             send_recovery_email(email, codigo)
-            return RedirectResponse(url=f"/recuperar?email={email}", status_code=303)
+
+        return RedirectResponse(url=f"/recuperar?email={email}", status_code=303)
     else:
         return RedirectResponse(url=f"/?message=El%20email%20no%20esta%20registrado.", status_code=303)
-
+    
 
 @app.get("/recuperar", response_class=HTMLResponse)
 async def recuperar(request: Request):
     return templates.TemplateResponse("recuperar.html", {"request": request, "email": request.query_params.get("email", "")})
 
 
-@app.post("/recuperacion", response_class=HTMLResponse)
+@app.post("/recuperacion")
 async def recuperacion(codigo: str = Form(...), email: str = Form(...), db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.email == email).first()
-    if user.codigo == codigo and user.codigo_expiracion > datetime.now(timezone.utc) and user.intentos < 4:
+    if not user:
+        return RedirectResponse(url="/forgot?message=Usuario%20no%20encontrado", status_code=303)
+
+    ahora = datetime.now(timezone.utc)
+    
+    if user.codigo_expiracion is not None and user.codigo_expiracion.tzinfo is None:
+        user.codigo_expiracion = user.codigo_expiracion.replace(tzinfo=timezone.utc)
+
+    if user.codigo == codigo and user.codigo_expiracion > ahora and user.intentos < 4:
         resetear_codigo_recuperacion(user, db)
         return RedirectResponse(url=f"/cambio?email={email}", status_code=303)
     else:
         user.intentos += 1
         db.commit()
-        db.refresh(user)
-        if user.intentos > 3:
-            resetear_codigo_recuperacion(user, db)
-            expiracion = datetime.now(timezone.utc) + timedelta(minutes=60)
-            user.codigo_expiracion = expiracion
+        
+        if user.intentos >= 4:
+            user.codigo_expiracion = ahora + timedelta(hours=1)
             db.commit()
-            db.refresh(user)
-            return RedirectResponse(url="/forgot?message=Has%20superado%20el%20l%C3%ADmite%20de%20intentos.%20Por%20favor,%20intenta%20de%20nuevo%20m%C3%A1s%20tarde.", status_code=303)
-        elif user.codigo_expiracion < datetime.now(timezone.utc):
-            resetear_codigo_recuperacion(user, db)
-            return RedirectResponse(url="/forgot?message=El%20c%C3%B3digo%20ha%20expirado.%20Solicita%20uno%20nuevo.", status_code=303)
-        else:
-            return RedirectResponse(url=f"/recuperar?email={email}", status_code=303)
+            return RedirectResponse(url="/forgot?message=Bloqueado%20por%201%20hora", status_code=303)
+                
+    return RedirectResponse(url=f"/recuperar?email={email}&error=Intento%20fallido", status_code=303)
+
 
 
 @app.get("/cambio", response_class=HTMLResponse)
@@ -290,4 +293,4 @@ if __name__ == "__main__":
     #uvicorn.run('main:app', port=8001, reload=True)
 
     # para produccion
-    uvicorn.run("main:app", host="0.0.0.0", port=8000)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
