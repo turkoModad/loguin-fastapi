@@ -1,15 +1,14 @@
 {% extends "components/layout.html" %}
 
-{% block title %}Verificar Código{% endblock %}
+{% block title %}Verificacion de Código{% endblock %}
 
 {% block content %}
 <style>
-    .contenedor { 
-        width: 90%; 
-        max-width: 400px; 
-        margin: 50px auto; 
-        text-align: center; 
+    h2 {
+        text-align: center;
+        margin-top: 50px;;
     }
+
     .alert { 
         color: #d9534f; 
         background-color: #f2dede; 
@@ -17,26 +16,31 @@
         margin-bottom: 15px; 
         border-radius: 5px; 
     }
-    input { 
-        width: 100%; 
-        padding: 10px; 
-        margin-top: 10px; 
-        margin-bottom: 15px; /* Espaciado para separar el campo del botón */
-        border: 1px solid #ccc; 
-        border-radius: 5px; 
-    }
+
     button { 
-        width: 100%; 
+        width: 50%; 
         padding: 10px; 
-        background-color: #28a745; /* Botón verde para "Verificar Código" */
+        background-color: #28a745;
         color: white; 
         border: none; 
         border-radius: 5px; 
         cursor: pointer; 
-        margin-top: 10px; /* Separación entre el input y el botón */
+        margin-top: 10px; 
     }
+
     button:hover { 
-        background-color: #218838; /* Efecto hover más oscuro */
+        background-color: #218838;
+    }
+
+    form {
+        width: 50%;
+        margin: 50px auto; 
+        text-align: center;
+        padding: 10px; 
+        margin-top: 50px; 
+        margin-bottom: 15px; 
+        border: 1px solid #ccc; 
+        border-radius: 5px; 
     }
 </style>
 

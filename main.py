@@ -139,15 +139,16 @@ async def forgot(request: Request):
 
 @app.post("/forgot")
 async def forgot(email: str = Form(...), db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.email == email).first()    
-    if user:               
-        if user.codigo is None and user.codigo_expiracion is not None:
-            if user.codigo_expiracion < datetime.now(timezone.utc):                
-                user.codigo_expiracion = None
-                db.commit()
-                db.refresh(user)
-
-        if user.codigo is None:
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if user:
+        if user.codigo_expiracion is not None and user.codigo is None:
+            if user.codigo_expiracion.astimezone(timezone.utc) < datetime.now(timezone.utc):
+                codigo = generar_codigo(user, db)
+                send_recovery_email(email, codigo)
+                return RedirectResponse(url=f"/recuperar?email={email}", status_code=303)
+            else:
+                return RedirectResponse(url="/", status_code=303)
+        else:
             codigo = generar_codigo(user, db)
             send_recovery_email(email, codigo)
 
