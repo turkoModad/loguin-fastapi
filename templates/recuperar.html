@@ -44,6 +44,13 @@
     }
 </style>
 
+{% if request.query_params.get('message') %}
+    <div class="alert alert-info">
+        {{ request.query_params.get('message') }}
+    </div>
+{% endif %}
+
+
     <h2>Introduce el código enviado a tu email</h2>
 
     <form action="/recuperacion" method="POST">
