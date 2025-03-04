@@ -306,6 +306,25 @@ async def contacto(request: Request):
     return templates.TemplateResponse("contacto.html", {"request": request})
 
 
+@app.post("/contacto", response_class=HTMLResponse)
+async def contacto(request : Request, name: str = Form(...), email: str = Form(...), message: str = Form(...), db: Session = Depends(get_db)):
+    usuario = db.query(models.User).filter(models.User.email == email).first()
+
+    user_id = usuario.id if usuario else None
+
+    nuevo_mensaje = models.MensajeContacto(
+    name = name,
+    email = email,
+    mensaje = message,
+    user_id = user_id  
+    )
+
+    db.add(nuevo_mensaje)
+    db.commit() 
+    db.refresh(nuevo_mensaje)
+    return RedirectResponse(url = "/", status_code=HTTP_303_SEE_OTHER)
+
+
 @app.get("/terminosCondiciones", response_class=HTMLResponse)
 async def terminosCondiciones(request: Request):
     return templates.TemplateResponse("terminosCondiciones.html", {"request": request})

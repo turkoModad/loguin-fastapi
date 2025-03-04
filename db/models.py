@@ -1,7 +1,6 @@
 from db.database import Base, engine
 from sqlalchemy import Column, Integer, String, DateTime, Text, TIMESTAMP, ForeignKey, func
 from sqlalchemy.orm import relationship
-from datetime import datetime
 
 
 class User(Base):
@@ -27,7 +26,7 @@ class MensajeContacto(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), index=True)
     email = Column(String(100), index=True)
-    mensaje = Column(Text)
+    mensaje = Column(Text, nullable=False)
     fecha_mensaje = Column(TIMESTAMP(timezone=True), nullable=False, default=func.now())
     user_id = Column(Integer, ForeignKey('users.id', ondelete="SET NULL"), nullable=True)
     user = relationship("User", back_populates="mensaje_contacto")

@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class User(BaseModel):
     username: str 
     firstname: str
@@ -8,7 +9,7 @@ class User(BaseModel):
     password_user: str
     email: str
     rol: str
-      
+          
 
 class Token(BaseModel):
     access_token: str
