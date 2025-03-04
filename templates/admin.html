@@ -123,6 +123,12 @@
                         <td>${mensaje.email}</td>
                         <td>${mensaje.mensaje}</td>
                         <td>${new Date(mensaje.fecha_mensaje).toLocaleString()}</td>
+                        <td>
+                            <button class="btn btn-success" onclick="responderMensaje('${mensaje.id}')">Responder</button>
+                        </td>
+                        <td>
+                            <button class="btn btn-danger"" onclick="eliminarMensaje(${mensaje.id})">Eliminar</button>
+                        </td>
                     </tr>
                 `;
                     document.querySelector('#mensajes').innerHTML += mensajeRow;
@@ -144,7 +150,7 @@
         }
         function editarUsuario(id) {
             fetch(`admin/usuario/${id}`, {
-                method: 'GET',
+                method: 'POST',
                 headers: {
                     'Authorization': `${tokenType} ${accessToken}`
                 }
@@ -181,6 +187,51 @@
                             });
                     };
                 });
+        }
+        function responderMensaje(mensaje_id) {
+            let respuesta = prompt("Escribe tu respuesta: " );
+
+            if (!respuesta) {
+                alert("No puedes enviar un mensaje vacío.");
+                return;
+            }
+            fetch(`/admin/responderEmail/${mensaje_id}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `${tokenType} ${accessToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ respuesta })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.mensaje);
+            })
+            .catch(error => {
+                console.error("Error al responder el mensaje:", error);
+            });
+        }
+        function eliminarMensaje(mensajeId) {
+            fetch(`admin/eliminar/${mensajeId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `${tokenType} ${accessToken}`
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Error al eliminar el mensaje");
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert(data.message);
+                location.reload();
+            })
+            .catch(error => {
+                console.error("Error al eliminar el mensaje:", error);
+
+            });
         }
 </script>
 {% endblock %}

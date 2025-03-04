@@ -258,7 +258,7 @@ async def admin(user_global: TokenData = Depends(get_current_user), db: Session 
     return {"usuarios": data, "mensajes": mensajes}
 
 
-@app.get("/admin/usuario/{id}")
+@app.post("/admin/usuario/{id}")
 async def get_user(id: int, db: Session = Depends(get_db), user_global: TokenData = Depends(get_current_user)):   
     datos = db.query(models.User).filter(models.User.username == user_global.username).first()   
     if datos.rol != "admin":
@@ -296,6 +296,46 @@ async def update_user(id: int, email: str = Form(...), rol: str = Form(...), pas
     db.commit()
     db.refresh(usuario)
     return {"message": "Usuario actualizado exitosamente"}
+
+
+@app.post("/admin/responderEmail/{mensaje_id}")
+async def responderEmail(request: Request, mensaje_id: int, db: Session = Depends(get_db), user_global: TokenData = Depends(get_current_user)):
+    datos = db.query(models.User).filter(models.User.username == user_global.username).first()
+    
+    if datos.rol != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permisos para acceder a esta ruta")
+
+    destinatario_mensaje = db.query(models.MensajeContacto).filter(models.MensajeContacto.id == mensaje_id).first()
+    
+    if not destinatario_mensaje:
+        raise HTTPException(status_code=404, detail="Mensaje no encontrado")
+
+    data = await request.json()
+    respuesta = data.get("respuesta")
+
+    if not respuesta:
+        raise HTTPException(status_code=400, detail="No se recibió una respuesta válida.")
+
+    print(f"Enviando email a {destinatario_mensaje.email}: {respuesta}")
+    return {"mensaje": "Email enviado correctamente"}
+
+
+
+
+@app.delete("/admin/eliminar/{mensaje_id}")
+async def eliminar_mensaje(mensaje_id: int, db: Session = Depends(get_db), user_global: TokenData = Depends(get_current_user)):
+    datos = db.query(models.User).filter(models.User.username == user_global.username).first()
+    if datos.rol != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permisos para acceder a esta ruta"
+        )
+    mensaje = db.query(models.MensajeContacto).filter(models.MensajeContacto.id == mensaje_id).first()    
+    if not mensaje:
+        raise HTTPException(status_code=404, detail="Mensaje no encontrado")
+    db.delete(mensaje)
+    db.commit() 
+    return {"message": "Mensaje eliminado correctamente"}
 
 
 @app.get("/about", response_class=HTMLResponse)
