@@ -142,7 +142,7 @@ async def forgot(email: str = Form(...), db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.email == email).first()
     if user:
         ahora = datetime.now(timezone.utc)
-        if user.codigo and user.codigo_expiracion and user.codigo_expiracion > ahora:
+        if user.codigo and user.codigo_expiracion and user.codigo_expiracion.astimezone(timezone.utc) > ahora:
             return RedirectResponse(
                 url=f"/recuperar?email={email}&message=Código%20ya%20enviado.%20Revisa%20tu%20correo.",
                 status_code=303
