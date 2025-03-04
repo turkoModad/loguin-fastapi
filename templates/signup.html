@@ -1,6 +1,6 @@
 {% extends "components/layout.html" %}
 
-{% block title %}Home{% endblock %}
+{% block title %}Registrarse{% endblock %}
 
 {% block content %}
 <style>    
@@ -15,11 +15,20 @@
         margin-left: auto;
         margin-right: auto;
     }
-    button{
-		width: 30%;
-        margin-left: auto;
-        margin-right: auto;
-	}
+    button { 
+        width: 50%; 
+        padding: 10px; 
+        background-color: #28a745;
+        color: white; 
+        border: none; 
+        border-radius: 5px; 
+        cursor: pointer; 
+        margin-top: 10px; 
+    }
+
+    button:hover { 
+        background-color: #218838;
+    }
     .form-label {
         text-align: left;
         display: block;
@@ -70,7 +79,7 @@
             <small id="passwordError" class="text-danger d-none">Passwords do not match</small>
         </div>
         <div class="col-12 text-center">
-            <button type="submit" class="btn btn-primary">Send Data</button>
+            <button type="submit">Send Data</button>
         </div>
     </form>	
 
