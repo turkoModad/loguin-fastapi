@@ -247,13 +247,15 @@ async def admin(user_global: TokenData = Depends(get_current_user), db: Session 
             detail="No tienes permisos para acceder a esta ruta"
         )
 
-    data = db.query(models.User).all()
+    data = db.query(models.User).all()    
+    mensajes = db.query(models.MensajeContacto).all()
+    
     if not data:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No hay usuarios en la base de datos"
         )
-    return {"usuarios": data}
+    return {"usuarios": data, "mensajes": mensajes}
 
 
 @app.get("/admin/usuario/{id}")
