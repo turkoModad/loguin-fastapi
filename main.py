@@ -295,6 +295,24 @@ async def update_user(id: int, email: str = Form(...), rol: str = Form(...), pas
     return {"message": "Usuario actualizado exitosamente"}
 
 
+@app.get("/about", response_class=HTMLResponse)
+async def about(request: Request):
+    return templates.TemplateResponse("about.html", {"request": request})
+
+@app.get("/contacto", response_class=HTMLResponse)
+async def contacto(request: Request):
+    return templates.TemplateResponse("contacto.html", {"request": request})
+
+@app.get("/terminosCondiciones", response_class=HTMLResponse)
+async def terminosCondiciones(request: Request):
+    return templates.TemplateResponse("terminosCondiciones.html", {"request": request})
+
+
+@app.get("/politica", response_class=HTMLResponse)
+async def politica(request: Request):
+    return templates.TemplateResponse("politica.html", {"request": request})
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
