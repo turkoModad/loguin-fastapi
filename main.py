@@ -299,9 +299,11 @@ async def update_user(id: int, email: str = Form(...), rol: str = Form(...), pas
 async def about(request: Request):
     return templates.TemplateResponse("about.html", {"request": request})
 
+
 @app.get("/contacto", response_class=HTMLResponse)
 async def contacto(request: Request):
     return templates.TemplateResponse("contacto.html", {"request": request})
+
 
 @app.get("/terminosCondiciones", response_class=HTMLResponse)
 async def terminosCondiciones(request: Request):

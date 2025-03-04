@@ -29,7 +29,6 @@ EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 
 
 def send_recovery_email(email: str, codigo: str):
-    # Configurar el mensaje
     msg = MIMEMultipart()
     msg['From'] = EMAIL_USERNAME
     msg['To'] = email
@@ -39,9 +38,8 @@ def send_recovery_email(email: str, codigo: str):
     msg.attach(MIMEText(body, 'plain'))
 
     try:
-        # Conectar al servidor SMTP y enviar el email
         server = smtplib.SMTP(EMAIL_HOST, EMAIL_PORT)
-        server.starttls()  # Habilitar TLS para mayor seguridad
+        server.starttls()  
         server.login(EMAIL_USERNAME, EMAIL_PASSWORD)
         server.sendmail(EMAIL_USERNAME, email, msg.as_string())
         server.quit()

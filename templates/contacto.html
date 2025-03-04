@@ -3,7 +3,30 @@
 {% block title %}Contacto{% endblock %}
 
 {% block content %}
+<div class="container mt-5">
+    <h1 class="text-center">Contáctanos</h1>
+    <p class="text-center">Si tienes alguna consulta sobre nuestra plataforma de inversiones, puedes comunicarte con nosotros.</p>
 
+    <form class="mt-4 mx-auto" style="max-width: 600px;">
+        <div class="mb-3">
+            <label for="name" class="form-label">Nombre</label>
+            <input type="text" class="form-control" id="name" required>
+        </div>
+        <div class="mb-3">
+            <label for="email" class="form-label">Correo Electrónico</label>
+            <input type="email" class="form-control" id="email" required>
+        </div>
+        <div class="mb-3">
+            <label for="message" class="form-label">Mensaje</label>
+            <textarea class="form-control" id="message" rows="4" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-success w-100">Enviar</button>
+    </form>
 
-
+    <div class="text-center mt-4">
+        <p><strong>Horario:</strong> Soporte las 24 hrs</p>
+        <p><strong>Email:</strong> turkomodad88@gmail.com</p>
+        
+    </div>
+</div>
 {% endblock %}
