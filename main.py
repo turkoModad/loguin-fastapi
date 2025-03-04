@@ -26,29 +26,16 @@ import logging
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# def create_tables():
-#     check = inspect(engine)
-#     existing_tables = check.get_table_names()
-#     if len(existing_tables) > 0:
-#         print("Tables already exist")
-#     else:
-#         Base.metadata.create_all(bind=engine)
-
-# create_tables()
 
 def create_tables():
     check = inspect(engine)
     existing_tables = check.get_table_names()
     if len(existing_tables) > 0:
-        print("Tables already exist, dropping them...")
-        Base.metadata.drop_all(bind=engine)  # Elimina las tablas
+        print("Tables already exist")
     else:
-        print("Creating new tables...")
-    
-    Base.metadata.create_all(bind=engine)  # Crea las tablas nuevamente
+        Base.metadata.create_all(bind=engine)
 
-create_tables()
-
+#create_tables()
 
 
 app = FastAPI()
