@@ -38,14 +38,14 @@ def create_tables():
 #create_tables()
 
 # Borra todas las tablas y las crea nuevamente
-def recreate_tables():
-    check = inspect(engine)
-    existing_tables = check.get_table_names()    
-    if existing_tables:        
-        Base.metadata.drop_all(bind=engine)   
-    Base.metadata.create_all(bind=engine)    
+# def recreate_tables():
+#     check = inspect(engine)
+#     existing_tables = check.get_table_names()    
+#     if existing_tables:        
+#         Base.metadata.drop_all(bind=engine)   
+#     Base.metadata.create_all(bind=engine)    
 
-recreate_tables()
+# recreate_tables()
 
 
 
