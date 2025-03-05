@@ -11,6 +11,11 @@ from datetime import datetime, timedelta, timezone
 
 load_dotenv()
 
+EMAIL_HOST = os.getenv("EMAIL_HOST")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
+EMAIL_USERNAME = os.getenv("EMAIL_USERNAME")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
+
 def generar_codigo(user,db: Session):
     codigo = str(random.randint(100000, 999999))
     expiracion = datetime.now(timezone.utc) + timedelta(minutes=10)
@@ -20,12 +25,6 @@ def generar_codigo(user,db: Session):
     db.commit()
     db.refresh(user)
     return codigo
-
-
-EMAIL_HOST = os.getenv("EMAIL_HOST")
-EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
-EMAIL_USERNAME = os.getenv("EMAIL_USERNAME")
-EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 
 
 def send_recovery_email(email: str, codigo: str):
@@ -55,3 +54,21 @@ def resetear_codigo_recuperacion(user, db):
     db.commit()
     db.refresh(user)
     return user
+
+
+def responder_contacto(email: str, mensaje = str):
+    msg = MIMEMultipart()
+    msg['From'] = EMAIL_USERNAME
+    msg['To'] = email
+    msg['Subject'] = "Respuesta a tu mensaje"
+    msg.attach(MIMEText(mensaje, 'plain'))
+
+    try:
+        server = smtplib.SMTP(EMAIL_HOST, EMAIL_PORT)
+        server.starttls()  
+        server.login(EMAIL_USERNAME, EMAIL_PASSWORD)
+        server.sendmail(EMAIL_USERNAME, email, msg.as_string())
+        server.quit()
+        return {"status": "success", "message": "Email enviado correctamente", "email": email}
+    except Exception as e:
+        return {"status": "error", "message": f"Error al enviar el email: {str(e)}", "email": email}
