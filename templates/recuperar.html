@@ -61,4 +61,13 @@
         </div>
         <button type="submit" class="btn btn-success">Verificar Código</button>
     </form>
+
+    <script>
+        document.querySelector("form").addEventListener("submit", function() {
+            document.querySelector("button[type='submit']").disabled = true;
+        });
+        if (window.history.replaceState) {
+            window.history.replaceState(null, null, window.location.href);
+        }
+    </script>
 {% endblock %}

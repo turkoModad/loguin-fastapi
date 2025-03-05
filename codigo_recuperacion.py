@@ -8,22 +8,33 @@ from db.database import get_db
 from sqlalchemy.orm import Session
 from fastapi import Depends
 from datetime import datetime, timedelta, timezone
+from cryptography.fernet import Fernet
+import base64
 
 load_dotenv()
+
 
 EMAIL_HOST = os.getenv("EMAIL_HOST")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
 EMAIL_USERNAME = os.getenv("EMAIL_USERNAME")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 
+
+KEY= os.getenv("KEY")
+
+cipher = Fernet(KEY.encode())
+
+
 def generar_codigo(user,db: Session):
     codigo = str(random.randint(100000, 999999))
     expiracion = datetime.now(timezone.utc) + timedelta(minutes=10)
-    user.codigo = codigo
+    codigo_cifrado = cipher.encrypt(codigo.encode())
+    codigo64 = base64.b64encode(codigo_cifrado).decode()
+    user.codigo = codigo64
     user.codigo_expiracion = expiracion
     user.intentos = 0
     db.commit()
-    db.refresh(user)
+    db.refresh(user)  
     return codigo
 
 

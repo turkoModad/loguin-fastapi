@@ -82,21 +82,30 @@
             <button type="submit">Send Data</button>
         </div>
     </form>	
-
-    <script>
-        function validatePasswords() {
-            let password = document.getElementById("validationDefault05").value;
-            let repeatPassword = document.getElementById("repeatPassword").value;
-            let errorText = document.getElementById("passwordError");
-
-            if (password !== repeatPassword) {
-                errorText.classList.remove("d-none"); 
-                return false;
-            } else {
-                errorText.classList.add("d-none");
-                return true;
-            }
-        }
-    </script>
 </div>
+
+<script>
+    function validatePasswords() {
+        let password = document.getElementById("validationDefault05").value;
+        let repeatPassword = document.getElementById("repeatPassword").value;
+        let errorText = document.getElementById("passwordError");
+
+        if (password !== repeatPassword) {
+            errorText.classList.remove("d-none"); 
+            return false;
+        } else {
+            errorText.classList.add("d-none");
+            return true;
+        }
+    }
+    
+    document.querySelector("form").addEventListener("submit", function() {
+        document.querySelector("button[type='submit']").disabled = true;
+    });
+    if (window.history.replaceState) {
+        window.history.replaceState(null, null, window.location.href);
+    }
+
+</script>
+
 {% endblock %}

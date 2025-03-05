@@ -22,6 +22,8 @@ from datetime import datetime, timedelta, timezone
 import os
 from starlette.status import HTTP_303_SEE_OTHER
 import logging
+from cryptography.fernet import Fernet
+import base64
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -37,6 +39,7 @@ def create_tables():
 
 #create_tables()
 
+
 # Borra todas las tablas y las crea nuevamente
 # def recreate_tables():
 #     check = inspect(engine)
@@ -48,10 +51,13 @@ def create_tables():
 # recreate_tables()
 
 
-
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
+
+KEY = os.getenv("KEY")
+cipher = Fernet(KEY.encode())
 
 
 #ruta de salud para render
@@ -187,11 +193,15 @@ async def recuperacion(codigo: str = Form(...), email: str = Form(...), db: Sess
         return RedirectResponse(url="/forgot?message=Usuario%20no%20encontrado", status_code=303)
 
     ahora = datetime.now(timezone.utc)
-    
+
+    codigo64 = user.codigo
+    cifrado = base64.b64decode(codigo64)
+    decifrado = cipher.decrypt(cifrado).decode()
+        
     if user.codigo_expiracion is not None and user.codigo_expiracion.tzinfo is None:
         user.codigo_expiracion = user.codigo_expiracion.replace(tzinfo=timezone.utc)
 
-    if user.codigo == codigo and user.codigo_expiracion > ahora and user.intentos < 4:
+    if decifrado == codigo and user.codigo_expiracion > ahora and user.intentos < 4:
         resetear_codigo_recuperacion(user, db)
         return RedirectResponse(url=f"/cambio?email={email}", status_code=303)
     else:
@@ -199,12 +209,14 @@ async def recuperacion(codigo: str = Form(...), email: str = Form(...), db: Sess
         db.commit()
         
         if user.intentos >= 4:
-            user.codigo_expiracion = ahora + timedelta(hours=1)
+            user.codigo_expiracion = ahora + timedelta(hours=1)            
+            user.codigo = None
+            user.intentos = 0
             db.commit()
+            db.refresh(user)
             return RedirectResponse(url="/forgot?message=Bloqueado%20por%201%20hora", status_code=303)
                 
     return RedirectResponse(url=f"/recuperar?email={email}&error=Intento%20fallido", status_code=303)
-
 
 
 @app.get("/cambio", response_class=HTMLResponse)
@@ -329,8 +341,6 @@ async def responderEmail(request: Request, mensaje_id: int, db: Session = Depend
 
     print(f"Enviando email a {destinatario_mensaje.email}: {respuesta}")
     return {"mensaje": "Email enviado correctamente"}
-
-
 
 
 @app.delete("/admin/eliminar/{mensaje_id}")

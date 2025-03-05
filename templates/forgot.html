@@ -56,5 +56,13 @@
         <button type="submit">Enviar</button>
     </form>
 </div>
+<script>
+    document.querySelector("form").addEventListener("submit", function() {
+        document.querySelector("button[type='submit']").disabled = true;
+    });
+    if (window.history.replaceState) {
+        window.history.replaceState(null, null, window.location.href);
+    }
+</script>
 {% endblock %}
 
