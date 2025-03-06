@@ -233,5 +233,17 @@
 
             });
         }
+    document.querySelector("form").addEventListener("submit", function() {
+        document.querySelector("button[type='submit']").disabled = true;
+    });
+    if (window.history.replaceState) {
+        window.history.replaceState(null, null, window.location.href);
+    }
+    window.addEventListener('pageshow', function(event) {
+    if (event.persisted) {
+        const form = document.getElementById('form-editar-usuario');
+        if (form) form.reset();
+    }
+    })
 </script>
 {% endblock %}

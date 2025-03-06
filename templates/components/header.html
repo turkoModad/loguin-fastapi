@@ -27,8 +27,11 @@
             document.getElementById("logout-btn").style.display = "inline-block";
         }
     });
-    document.getElementById("logout-btn").addEventListener("click", function () {
-        localStorage.clear();  
-        window.location.href = "/";  
-    });
+    document.getElementById("logout-btn").addEventListener("click", function() {
+    localStorage.clear();
+    window.location.href = "/";
+    if (window.history.replaceState) {
+        window.history.replaceState(null, null, window.location.href);
+    }
+    })
 </script>

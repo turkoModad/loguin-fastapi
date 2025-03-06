@@ -39,7 +39,7 @@
     <div class="row m-md-5 m-3">
         <h1 class="col text-center">FastAPI form</h1>
     </div>	
-    <form method="post" action="/signup" class="row g-3 mx-sm-5 mx-2" onsubmit="return validatePasswords()">
+    <form method="post" action="/signup" class="row g-3 mx-sm-5 mx-2" id="form-signup" onsubmit="return validatePasswords()">
         <div class="col mb-4">
             <label for="validationDefault01" class="form-label">Firstname</label>
             <input name="firstname" type="text" class="form-control" id="validationDefault01" required>
@@ -105,6 +105,12 @@
     if (window.history.replaceState) {
         window.history.replaceState(null, null, window.location.href);
     }
+    window.addEventListener('pageshow', function(event) {
+    if (event.persisted) {
+        const form = document.getElementById('form-signup');
+        if (form) form.reset(); 
+    }
+    })
 
 </script>
 

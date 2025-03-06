@@ -17,7 +17,7 @@ from sqlalchemy import inspect
 from fastapi.exceptions import HTTPException
 from schemas import TokenData
 from oauth import get_current_user
-from codigo_recuperacion import generar_codigo, send_recovery_email, resetear_codigo_recuperacion
+from codigo_recuperacion import generar_codigo, send_recovery_email, resetear_codigo_recuperacion, responder_contacto
 from datetime import datetime, timedelta, timezone
 import os
 from starlette.status import HTTP_303_SEE_OTHER
@@ -338,9 +338,9 @@ async def responderEmail(request: Request, mensaje_id: int, db: Session = Depend
 
     if not respuesta:
         raise HTTPException(status_code=400, detail="No se recibió una respuesta válida.")
-
-    print(f"Enviando email a {destinatario_mensaje.email}: {respuesta}")
-    return {"mensaje": "Email enviado correctamente"}
+    
+    responder_contacto(destinatario_mensaje.email, respuesta)
+    return {"mensaje": f"Email enviado correctamente a: {destinatario_mensaje.email}" }
 
 
 @app.delete("/admin/eliminar/{mensaje_id}")

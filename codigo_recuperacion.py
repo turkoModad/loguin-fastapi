@@ -80,6 +80,6 @@ def responder_contacto(email: str, mensaje = str):
         server.login(EMAIL_USERNAME, EMAIL_PASSWORD)
         server.sendmail(EMAIL_USERNAME, email, msg.as_string())
         server.quit()
-        return {"status": "success", "message": "Email enviado correctamente", "email": email}
+        print("Email enviado correctamente.")
     except Exception as e:
-        return {"status": "error", "message": f"Error al enviar el email: {str(e)}", "email": email}
+        print(f"Error al enviar el email: {e}")

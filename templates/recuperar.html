@@ -50,10 +50,9 @@
     </div>
 {% endif %}
 
-
     <h2>Introduce el código enviado a tu email</h2>
 
-    <form action="/recuperacion" method="POST">
+    <form action="/recuperacion" method="POST" id="form-recuperacion">
         <input type="hidden" name="email" value="{{ email }}">
         <div class="mb-3">
             <label for="codigo" class="form-label">Código de Verificación</label>
@@ -69,5 +68,11 @@
         if (window.history.replaceState) {
             window.history.replaceState(null, null, window.location.href);
         }
+        window.addEventListener('pageshow', function(event) {
+    if (event.persisted) {
+        const form = document.getElementById('form-recuperacion');
+        if (form) form.reset(); 
+    }
+    })
     </script>
 {% endblock %}

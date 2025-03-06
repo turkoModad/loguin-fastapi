@@ -3,6 +3,13 @@
 {% block title %}Inicio - Sitio Web{% endblock %}
 
 {% block content %}
+<style>
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    color: var(--bs-btn-color) !important;
+}
+</style>
 <div class="container">
     <section class="text-center my-5">
         <h1>Bienvenido a Mi Sitio</h1>
@@ -36,7 +43,7 @@
             <div class="card p-4">
                 <h2>¿Eres nuevo aquí?</h2>
                 <p>Regístrate y empieza a gestionar tus inversiones de forma fácil y segura.</p>
-                <form action="/signup" method="GET">
+                <form id="signup-form" action="/signup" method="GET">
                     <button type="submit" class="btn btn-success w-100">Registrarse</button>
                 </form>
             </div>
@@ -83,6 +90,8 @@
 
         document.getElementById("login-form").onsubmit = (event) => {
             event.preventDefault();
+            const submitButton = event.target.querySelector('button[type="submit"]');
+            submitButton.disabled = true; 
             var formData = new FormData(event.target);
             fetch('login', { method: 'POST', body: formData })     
             .then(response => {
@@ -104,6 +113,21 @@
                 window.location.href = '/';
             });                
         };
-    });
+    })
+    document.getElementById("signup-form").onsubmit = (event) => {
+        const submitButton = event.target.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+    };
+    document.querySelectorAll("form").forEach(form => {
+        form.addEventListener("submit", function() {
+            this.querySelector("button[type='submit']").disabled = true;
+        });
+    })
+    window.addEventListener('pageshow', function(event) {
+    if (event.persisted) {
+        document.getElementById('login-form').reset();
+        document.getElementById('signup-form').reset();
+    }
+    })
 </script>
 {% endblock %}

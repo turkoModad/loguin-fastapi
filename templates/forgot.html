@@ -50,7 +50,7 @@
         </div>
     {% endif %}
 
-    <form action="/forgot" method="POST">
+    <form action="/forgot" method="POST" id="form-forgot">
         <label for="email-olvidado">Introduce tu Email</label>
         <input name="email" type="email" id="email-olvidado" required>
         <button type="submit">Enviar</button>
@@ -63,6 +63,11 @@
     if (window.history.replaceState) {
         window.history.replaceState(null, null, window.location.href);
     }
+    window.addEventListener('pageshow', function(event) {
+    if (event.persisted) {
+        const form = document.getElementById('form-forgot');
+        if (form) form.reset();
+    }
+    })
 </script>
 {% endblock %}
-
